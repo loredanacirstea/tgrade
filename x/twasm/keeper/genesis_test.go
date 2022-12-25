@@ -95,15 +95,6 @@ func TestInitGenesis(t *testing.T) {
 				state.PrivilegedContractAddresses = []string{genContractAddress(2, 1).String()}
 				state.Contracts = nil
 				state.Sequences = []wasmtypes.Sequence{{IDKey: wasmtypes.KeyLastCodeID, Value: 3}}
-				state.GenMsgs = []wasmtypes.GenesisState_GenMsgs{
-					{Sum: &wasmtypes.GenesisState_GenMsgs_InstantiateContract{
-						InstantiateContract: wasmtypes.MsgInstantiateContractFixture(
-							func(msg *wasmtypes.MsgInstantiateContract) {
-								msg.CodeID = 2
-								msg.Funds = nil
-							}),
-					}},
-				}
 			}),
 			wasmvm: NewWasmVMMock(func(m *wasmtesting.MockWasmer) {
 				// callback registers for end block on sudo call

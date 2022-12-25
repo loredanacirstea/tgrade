@@ -6,28 +6,24 @@ package types
 import (
 	encoding_json "encoding/json"
 	fmt "fmt"
+	_ "github.com/CosmWasm/wasmd/x/wasm/types"
+	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
+	types "github.com/cosmos/cosmos-sdk/types"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/gogo/protobuf/proto"
+	github_com_gogo_protobuf_types "github.com/gogo/protobuf/types"
+	_ "google.golang.org/protobuf/types/known/durationpb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
 	time "time"
-
-	_ "github.com/CosmWasm/wasmd/x/wasm/types"
-	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
-	types "github.com/cosmos/cosmos-sdk/types"
-	_ "github.com/gogo/protobuf/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
-	github_com_gogo_protobuf_types "github.com/gogo/protobuf/types"
-	_ "google.golang.org/protobuf/types/known/durationpb"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
-
-var (
-	_ = fmt.Errorf
-	_ = math.Inf
-	_ = time.Kitchen
-)
+var _ = fmt.Errorf
+var _ = math.Inf
+var _ = time.Kitchen
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
@@ -55,11 +51,9 @@ func (*GenesisState) ProtoMessage()    {}
 func (*GenesisState) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a165193bab811d9d, []int{0}
 }
-
 func (m *GenesisState) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *GenesisState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GenesisState.Marshal(b, m, deterministic)
@@ -72,15 +66,12 @@ func (m *GenesisState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)
 		return b[:n], nil
 	}
 }
-
 func (m *GenesisState) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_GenesisState.Merge(m, src)
 }
-
 func (m *GenesisState) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *GenesisState) XXX_DiscardUnknown() {
 	xxx_messageInfo_GenesisState.DiscardUnknown(m)
 }
@@ -151,11 +142,9 @@ func (*ImportDump) ProtoMessage()    {}
 func (*ImportDump) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a165193bab811d9d, []int{1}
 }
-
 func (m *ImportDump) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *ImportDump) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImportDump.Marshal(b, m, deterministic)
@@ -168,15 +157,12 @@ func (m *ImportDump) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-
 func (m *ImportDump) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_ImportDump.Merge(m, src)
 }
-
 func (m *ImportDump) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *ImportDump) XXX_DiscardUnknown() {
 	xxx_messageInfo_ImportDump.DiscardUnknown(m)
 }
@@ -221,11 +207,9 @@ func (*SeedContracts) ProtoMessage()    {}
 func (*SeedContracts) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a165193bab811d9d, []int{2}
 }
-
 func (m *SeedContracts) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *SeedContracts) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SeedContracts.Marshal(b, m, deterministic)
@@ -238,15 +222,12 @@ func (m *SeedContracts) XXX_Marshal(b []byte, deterministic bool) ([]byte, error
 		return b[:n], nil
 	}
 }
-
 func (m *SeedContracts) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_SeedContracts.Merge(m, src)
 }
-
 func (m *SeedContracts) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *SeedContracts) XXX_DiscardUnknown() {
 	xxx_messageInfo_SeedContracts.DiscardUnknown(m)
 }
@@ -365,11 +346,9 @@ func (*MixerContractConfig) ProtoMessage()    {}
 func (*MixerContractConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a165193bab811d9d, []int{3}
 }
-
 func (m *MixerContractConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *MixerContractConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_MixerContractConfig.Marshal(b, m, deterministic)
@@ -382,15 +361,12 @@ func (m *MixerContractConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte,
 		return b[:n], nil
 	}
 }
-
 func (m *MixerContractConfig) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_MixerContractConfig.Merge(m, src)
 }
-
 func (m *MixerContractConfig) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *MixerContractConfig) XXX_DiscardUnknown() {
 	xxx_messageInfo_MixerContractConfig.DiscardUnknown(m)
 }
@@ -416,11 +392,9 @@ func (*MixerContractConfig_Sigmoid) ProtoMessage()    {}
 func (*MixerContractConfig_Sigmoid) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a165193bab811d9d, []int{3, 0}
 }
-
 func (m *MixerContractConfig_Sigmoid) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *MixerContractConfig_Sigmoid) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_MixerContractConfig_Sigmoid.Marshal(b, m, deterministic)
@@ -433,15 +407,12 @@ func (m *MixerContractConfig_Sigmoid) XXX_Marshal(b []byte, deterministic bool) 
 		return b[:n], nil
 	}
 }
-
 func (m *MixerContractConfig_Sigmoid) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_MixerContractConfig_Sigmoid.Merge(m, src)
 }
-
 func (m *MixerContractConfig_Sigmoid) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *MixerContractConfig_Sigmoid) XXX_DiscardUnknown() {
 	xxx_messageInfo_MixerContractConfig_Sigmoid.DiscardUnknown(m)
 }
@@ -469,11 +440,9 @@ func (*StakeContractConfig) ProtoMessage()    {}
 func (*StakeContractConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a165193bab811d9d, []int{4}
 }
-
 func (m *StakeContractConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *StakeContractConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_StakeContractConfig.Marshal(b, m, deterministic)
@@ -486,15 +455,12 @@ func (m *StakeContractConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte,
 		return b[:n], nil
 	}
 }
-
 func (m *StakeContractConfig) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_StakeContractConfig.Merge(m, src)
 }
-
 func (m *StakeContractConfig) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *StakeContractConfig) XXX_DiscardUnknown() {
 	xxx_messageInfo_StakeContractConfig.DiscardUnknown(m)
 }
@@ -579,11 +545,9 @@ func (*ValsetContractConfig) ProtoMessage()    {}
 func (*ValsetContractConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a165193bab811d9d, []int{5}
 }
-
 func (m *ValsetContractConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *ValsetContractConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ValsetContractConfig.Marshal(b, m, deterministic)
@@ -596,15 +560,12 @@ func (m *ValsetContractConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte
 		return b[:n], nil
 	}
 }
-
 func (m *ValsetContractConfig) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_ValsetContractConfig.Merge(m, src)
 }
-
 func (m *ValsetContractConfig) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *ValsetContractConfig) XXX_DiscardUnknown() {
 	xxx_messageInfo_ValsetContractConfig.DiscardUnknown(m)
 }
@@ -678,11 +639,9 @@ func (*EngagementContractConfig) ProtoMessage()    {}
 func (*EngagementContractConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a165193bab811d9d, []int{6}
 }
-
 func (m *EngagementContractConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *EngagementContractConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_EngagementContractConfig.Marshal(b, m, deterministic)
@@ -695,15 +654,12 @@ func (m *EngagementContractConfig) XXX_Marshal(b []byte, deterministic bool) ([]
 		return b[:n], nil
 	}
 }
-
 func (m *EngagementContractConfig) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_EngagementContractConfig.Merge(m, src)
 }
-
 func (m *EngagementContractConfig) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *EngagementContractConfig) XXX_DiscardUnknown() {
 	xxx_messageInfo_EngagementContractConfig.DiscardUnknown(m)
 }
@@ -736,11 +692,9 @@ func (*OversightCommitteeContractConfig) ProtoMessage()    {}
 func (*OversightCommitteeContractConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a165193bab811d9d, []int{7}
 }
-
 func (m *OversightCommitteeContractConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *OversightCommitteeContractConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_OversightCommitteeContractConfig.Marshal(b, m, deterministic)
@@ -753,15 +707,12 @@ func (m *OversightCommitteeContractConfig) XXX_Marshal(b []byte, deterministic b
 		return b[:n], nil
 	}
 }
-
 func (m *OversightCommitteeContractConfig) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_OversightCommitteeContractConfig.Merge(m, src)
 }
-
 func (m *OversightCommitteeContractConfig) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *OversightCommitteeContractConfig) XXX_DiscardUnknown() {
 	xxx_messageInfo_OversightCommitteeContractConfig.DiscardUnknown(m)
 }
@@ -808,11 +759,9 @@ func (*CommunityPoolContractConfig) ProtoMessage()    {}
 func (*CommunityPoolContractConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a165193bab811d9d, []int{8}
 }
-
 func (m *CommunityPoolContractConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *CommunityPoolContractConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CommunityPoolContractConfig.Marshal(b, m, deterministic)
@@ -825,15 +774,12 @@ func (m *CommunityPoolContractConfig) XXX_Marshal(b []byte, deterministic bool) 
 		return b[:n], nil
 	}
 }
-
 func (m *CommunityPoolContractConfig) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_CommunityPoolContractConfig.Merge(m, src)
 }
-
 func (m *CommunityPoolContractConfig) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *CommunityPoolContractConfig) XXX_DiscardUnknown() {
 	xxx_messageInfo_CommunityPoolContractConfig.DiscardUnknown(m)
 }
@@ -859,11 +805,9 @@ func (*ValidatorVotingContractConfig) ProtoMessage()    {}
 func (*ValidatorVotingContractConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a165193bab811d9d, []int{9}
 }
-
 func (m *ValidatorVotingContractConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *ValidatorVotingContractConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ValidatorVotingContractConfig.Marshal(b, m, deterministic)
@@ -876,15 +820,12 @@ func (m *ValidatorVotingContractConfig) XXX_Marshal(b []byte, deterministic bool
 		return b[:n], nil
 	}
 }
-
 func (m *ValidatorVotingContractConfig) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_ValidatorVotingContractConfig.Merge(m, src)
 }
-
 func (m *ValidatorVotingContractConfig) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *ValidatorVotingContractConfig) XXX_DiscardUnknown() {
 	xxx_messageInfo_ValidatorVotingContractConfig.DiscardUnknown(m)
 }
@@ -912,11 +853,9 @@ func (*PoEContract) ProtoMessage()    {}
 func (*PoEContract) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a165193bab811d9d, []int{10}
 }
-
 func (m *PoEContract) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *PoEContract) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PoEContract.Marshal(b, m, deterministic)
@@ -929,15 +868,12 @@ func (m *PoEContract) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) 
 		return b[:n], nil
 	}
 }
-
 func (m *PoEContract) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_PoEContract.Merge(m, src)
 }
-
 func (m *PoEContract) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *PoEContract) XXX_DiscardUnknown() {
 	xxx_messageInfo_PoEContract.DiscardUnknown(m)
 }
@@ -971,11 +907,9 @@ func (*TG4Member) ProtoMessage()    {}
 func (*TG4Member) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a165193bab811d9d, []int{11}
 }
-
 func (m *TG4Member) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *TG4Member) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TG4Member.Marshal(b, m, deterministic)
@@ -988,15 +922,12 @@ func (m *TG4Member) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-
 func (m *TG4Member) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_TG4Member.Merge(m, src)
 }
-
 func (m *TG4Member) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *TG4Member) XXX_DiscardUnknown() {
 	xxx_messageInfo_TG4Member.DiscardUnknown(m)
 }
@@ -1037,11 +968,9 @@ func (*VotingRules) ProtoMessage()    {}
 func (*VotingRules) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a165193bab811d9d, []int{12}
 }
-
 func (m *VotingRules) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *VotingRules) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_VotingRules.Marshal(b, m, deterministic)
@@ -1054,15 +983,12 @@ func (m *VotingRules) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) 
 		return b[:n], nil
 	}
 }
-
 func (m *VotingRules) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_VotingRules.Merge(m, src)
 }
-
 func (m *VotingRules) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *VotingRules) XXX_DiscardUnknown() {
 	xxx_messageInfo_VotingRules.DiscardUnknown(m)
 }
@@ -1105,11 +1031,9 @@ func (*ArbiterPoolContractConfig) ProtoMessage()    {}
 func (*ArbiterPoolContractConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a165193bab811d9d, []int{13}
 }
-
 func (m *ArbiterPoolContractConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *ArbiterPoolContractConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ArbiterPoolContractConfig.Marshal(b, m, deterministic)
@@ -1122,15 +1046,12 @@ func (m *ArbiterPoolContractConfig) XXX_Marshal(b []byte, deterministic bool) ([
 		return b[:n], nil
 	}
 }
-
 func (m *ArbiterPoolContractConfig) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_ArbiterPoolContractConfig.Merge(m, src)
 }
-
 func (m *ArbiterPoolContractConfig) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *ArbiterPoolContractConfig) XXX_DiscardUnknown() {
 	xxx_messageInfo_ArbiterPoolContractConfig.DiscardUnknown(m)
 }
@@ -1376,7 +1297,6 @@ func (m *GenesisState_SeedContracts) MarshalToSizedBuffer(dAtA []byte) (int, err
 	}
 	return len(dAtA) - i, nil
 }
-
 func (m *GenesisState_ImportDump) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
@@ -1398,7 +1318,6 @@ func (m *GenesisState_ImportDump) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	}
 	return len(dAtA) - i, nil
 }
-
 func (m *ImportDump) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -2239,7 +2158,6 @@ func encodeVarintGenesis(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-
 func (m *GenesisState) Size() (n int) {
 	if m == nil {
 		return 0
@@ -2266,7 +2184,6 @@ func (m *GenesisState_SeedContracts) Size() (n int) {
 	}
 	return n
 }
-
 func (m *GenesisState_ImportDump) Size() (n int) {
 	if m == nil {
 		return 0
@@ -2279,7 +2196,6 @@ func (m *GenesisState_ImportDump) Size() (n int) {
 	}
 	return n
 }
-
 func (m *ImportDump) Size() (n int) {
 	if m == nil {
 		return 0
@@ -2588,11 +2504,9 @@ func (m *ArbiterPoolContractConfig) Size() (n int) {
 func sovGenesis(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
-
 func sozGenesis(x uint64) (n int) {
 	return sovGenesis(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-
 func (m *GenesisState) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2746,7 +2660,6 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *ImportDump) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2831,7 +2744,6 @@ func (m *ImportDump) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *SeedContracts) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -3364,7 +3276,6 @@ func (m *SeedContracts) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *MixerContractConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -3448,7 +3359,6 @@ func (m *MixerContractConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *MixerContractConfig_Sigmoid) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -3586,7 +3496,6 @@ func (m *MixerContractConfig_Sigmoid) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *StakeContractConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -3727,7 +3636,6 @@ func (m *StakeContractConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *ValsetContractConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4144,7 +4052,6 @@ func (m *ValsetContractConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *EngagementContractConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4228,7 +4135,6 @@ func (m *EngagementContractConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *OversightCommitteeContractConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4409,7 +4315,6 @@ func (m *OversightCommitteeContractConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *CommunityPoolContractConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4493,7 +4398,6 @@ func (m *CommunityPoolContractConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *ValidatorVotingContractConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4577,7 +4481,6 @@ func (m *ValidatorVotingContractConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *PoEContract) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4679,7 +4582,6 @@ func (m *PoEContract) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *TG4Member) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4781,7 +4683,6 @@ func (m *TG4Member) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *VotingRules) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4939,7 +4840,6 @@ func (m *VotingRules) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *ArbiterPoolContractConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -5186,7 +5086,6 @@ func (m *ArbiterPoolContractConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func skipGenesis(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0

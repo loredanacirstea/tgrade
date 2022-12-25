@@ -1,7 +1,6 @@
 package types
 
 import (
-	wasmcli "github.com/CosmWasm/wasmd/x/wasm/client/cli"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -43,7 +42,7 @@ func (g GenesisState) ValidateBasic() error {
 		uniquePinnedCodeIDs[code] = struct{}{}
 	}
 
-	genesisCodes := wasmcli.GetAllCodes(&wasmState)
+	genesisCodes := GetAllCodes(&wasmState)
 	for _, code := range genesisCodes {
 		delete(uniquePinnedCodeIDs, code.CodeID)
 	}
@@ -51,7 +50,7 @@ func (g GenesisState) ValidateBasic() error {
 		return sdkerrors.Wrapf(wasmtypes.ErrInvalidGenesis, "%d pinned codeIDs not found in genesis codeIDs", len(uniquePinnedCodeIDs))
 	}
 
-	genesisContracts := wasmcli.GetAllContracts(&wasmState)
+	genesisContracts := GetAllContracts(&wasmState)
 	for _, contract := range genesisContracts {
 		delete(uniqueAddr, contract.ContractAddress)
 	}
@@ -83,7 +82,6 @@ func (g GenesisState) RawWasmState() wasmtypes.GenesisState {
 		Codes:     g.Codes,
 		Contracts: contracts,
 		Sequences: g.Sequences,
-		GenMsgs:   g.GenMsgs,
 	}
 }
 
@@ -104,4 +102,36 @@ var _ codectypes.UnpackInterfacesMessage = &Contract{}
 // UnpackInterfaces implements codectypes.UnpackInterfaces
 func (m *Contract) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 	return m.ContractInfo.UnpackInterfaces(unpacker)
+}
+
+type CodeMeta struct {
+	CodeID uint64             `json:"code_id"`
+	Info   wasmtypes.CodeInfo `json:"info"`
+}
+
+func GetAllCodes(state *wasmtypes.GenesisState) []CodeMeta {
+	all := make([]CodeMeta, len(state.Codes))
+	for i, c := range state.Codes {
+		all[i] = CodeMeta{
+			CodeID: c.CodeID,
+			Info:   c.CodeInfo,
+		}
+	}
+	return all
+}
+
+type ContractMeta struct {
+	ContractAddress string                 `json:"contract_address"`
+	Info            wasmtypes.ContractInfo `json:"info"`
+}
+
+func GetAllContracts(state *wasmtypes.GenesisState) []ContractMeta {
+	all := make([]ContractMeta, len(state.Contracts))
+	for i, c := range state.Contracts {
+		all[i] = ContractMeta{
+			ContractAddress: c.ContractAddress,
+			Info:            c.ContractInfo,
+		}
+	}
+	return all
 }

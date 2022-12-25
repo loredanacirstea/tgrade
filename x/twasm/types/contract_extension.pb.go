@@ -5,22 +5,18 @@ package types
 
 import (
 	fmt "fmt"
+	_ "github.com/cosmos/cosmos-proto"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/gogo/protobuf/proto"
 	io "io"
 	math "math"
 	math_bits "math/bits"
-
-	_ "github.com/gogo/protobuf/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
-	_ "github.com/regen-network/cosmos-proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
-
-var (
-	_ = fmt.Errorf
-	_ = math.Inf
-)
+var _ = fmt.Errorf
+var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
@@ -39,11 +35,9 @@ func (*TgradeContractDetails) ProtoMessage()    {}
 func (*TgradeContractDetails) Descriptor() ([]byte, []int) {
 	return fileDescriptor_cbb24c05a9eda05e, []int{0}
 }
-
 func (m *TgradeContractDetails) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *TgradeContractDetails) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TgradeContractDetails.Marshal(b, m, deterministic)
@@ -56,15 +50,12 @@ func (m *TgradeContractDetails) XXX_Marshal(b []byte, deterministic bool) ([]byt
 		return b[:n], nil
 	}
 }
-
 func (m *TgradeContractDetails) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_TgradeContractDetails.Merge(m, src)
 }
-
 func (m *TgradeContractDetails) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *TgradeContractDetails) XXX_DiscardUnknown() {
 	xxx_messageInfo_TgradeContractDetails.DiscardUnknown(m)
 }
@@ -83,11 +74,9 @@ func (*RegisteredPrivilege) ProtoMessage()    {}
 func (*RegisteredPrivilege) Descriptor() ([]byte, []int) {
 	return fileDescriptor_cbb24c05a9eda05e, []int{1}
 }
-
 func (m *RegisteredPrivilege) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *RegisteredPrivilege) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_RegisteredPrivilege.Marshal(b, m, deterministic)
@@ -100,15 +89,12 @@ func (m *RegisteredPrivilege) XXX_Marshal(b []byte, deterministic bool) ([]byte,
 		return b[:n], nil
 	}
 }
-
 func (m *RegisteredPrivilege) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_RegisteredPrivilege.Merge(m, src)
 }
-
 func (m *RegisteredPrivilege) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *RegisteredPrivilege) XXX_DiscardUnknown() {
 	xxx_messageInfo_RegisteredPrivilege.DiscardUnknown(m)
 }
@@ -129,8 +115,8 @@ var fileDescriptor_cbb24c05a9eda05e = []byte{
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x91, 0xbf, 0x4e, 0x02, 0x41,
 	0x10, 0xc6, 0x6f, 0xd5, 0x18, 0x3d, 0x83, 0xc5, 0x09, 0x09, 0x50, 0xac, 0x84, 0x44, 0x83, 0x05,
 	0xb7, 0x41, 0x3b, 0x4b, 0xd4, 0xc2, 0xc4, 0xc2, 0x5c, 0x28, 0x8c, 0xcd, 0xe5, 0x38, 0x86, 0x75,
-	0x13, 0xd8, 0xb9, 0xec, 0xae, 0x08, 0x6f, 0x61, 0xe9, 0x23, 0xf8, 0x00, 0x3e, 0x04, 0x25, 0xb1,
-	0xa2, 0x32, 0x72, 0xbc, 0x88, 0xe1, 0xfe, 0x35, 0xd2, 0xed, 0xec, 0xf7, 0x9b, 0xfd, 0x66, 0xe7,
+	0x13, 0xd8, 0xb9, 0xec, 0xae, 0x08, 0x6f, 0x61, 0xe9, 0x23, 0xf8, 0x00, 0x3e, 0x04, 0xb1, 0xa2,
+	0xa4, 0x32, 0x72, 0xbc, 0x88, 0xe1, 0xfe, 0x35, 0xd2, 0xed, 0xec, 0xf7, 0x9b, 0xfd, 0x66, 0xe7,
 	0xb3, 0xdb, 0x21, 0xca, 0xa1, 0x40, 0x66, 0xde, 0x02, 0x3d, 0x66, 0x93, 0x4e, 0x1f, 0x4c, 0xd0,
 	0x61, 0x21, 0x4a, 0xa3, 0x82, 0xd0, 0xf8, 0x30, 0x35, 0x20, 0xb5, 0x40, 0xe9, 0x46, 0x0a, 0x0d,
 	0x3a, 0xe5, 0x14, 0x77, 0x13, 0xdc, 0xcd, 0xf0, 0x7a, 0x99, 0x23, 0xc7, 0x04, 0x60, 0x9b, 0x53,
@@ -145,7 +131,7 @@ var fileDescriptor_cbb24c05a9eda05e = []byte{
 	0x87, 0xf9, 0x8a, 0x5a, 0xcb, 0x15, 0x25, 0x9f, 0x31, 0x25, 0xf3, 0x98, 0x92, 0x45, 0x4c, 0xc9,
 	0x6f, 0x4c, 0xc9, 0xfb, 0x9a, 0x5a, 0x8b, 0x35, 0xb5, 0x96, 0x6b, 0x6a, 0x3d, 0x9f, 0x73, 0x61,
 	0x5e, 0x5e, 0xfb, 0x6e, 0x88, 0x63, 0x96, 0x67, 0x93, 0x6c, 0x8a, 0x4d, 0xb3, 0x90, 0x36, 0x0e,
-	0xba, 0xbf, 0x9f, 0x6c, 0xf2, 0xea, 0x2f, 0x00, 0x00, 0xff, 0xff, 0x96, 0x22, 0xa5, 0xa2, 0xc1,
+	0xba, 0xbf, 0x9f, 0x6c, 0xf2, 0xea, 0x2f, 0x00, 0x00, 0xff, 0xff, 0x81, 0x64, 0x3a, 0x65, 0xc1,
 	0x01, 0x00, 0x00,
 }
 
@@ -178,7 +164,6 @@ func (this *TgradeContractDetails) Equal(that interface{}) bool {
 	}
 	return true
 }
-
 func (this *RegisteredPrivilege) Equal(that interface{}) bool {
 	if that == nil {
 		return this == nil
@@ -206,7 +191,6 @@ func (this *RegisteredPrivilege) Equal(that interface{}) bool {
 	}
 	return true
 }
-
 func (m *TgradeContractDetails) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -290,7 +274,6 @@ func encodeVarintContractExtension(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-
 func (m *TgradeContractDetails) Size() (n int) {
 	if m == nil {
 		return 0
@@ -325,11 +308,9 @@ func (m *RegisteredPrivilege) Size() (n int) {
 func sovContractExtension(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
-
 func sozContractExtension(x uint64) (n int) {
 	return sovContractExtension(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-
 func (m *TgradeContractDetails) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -414,7 +395,6 @@ func (m *TgradeContractDetails) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *RegisteredPrivilege) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -516,7 +496,6 @@ func (m *RegisteredPrivilege) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func skipContractExtension(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0
