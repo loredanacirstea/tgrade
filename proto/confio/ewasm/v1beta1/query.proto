@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package confio.ewasm.v1beta1;
+
+option go_package = "github.com/confio/tgrade/x/ewasm/types";
+
+import "gogoproto/gogo.proto";
+
+// Query defines the gRPC querier service.
+service Query {
+}

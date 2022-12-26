@@ -93,6 +93,10 @@ import (
 	"github.com/confio/tgrade/x/twasm"
 	twasmkeeper "github.com/confio/tgrade/x/twasm/keeper"
 
+	"github.com/confio/tgrade/x/ewasm"
+	ewasmkeeper "github.com/confio/tgrade/x/ewasm/keeper"
+	ewasmtypes "github.com/confio/tgrade/x/ewasm/types"
+
 	// unnamed import of statik for swagger UI support
 	_ "github.com/cosmos/cosmos-sdk/client/docs/statik"
 )
@@ -149,6 +153,7 @@ var (
 		globalfee.AppModuleBasic{},
 		ica.AppModuleBasic{},
 		ibcfee.AppModuleBasic{},
+		ewasm.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -158,6 +163,7 @@ var (
 		twasm.ModuleName:            {authtypes.Minter, authtypes.Burner},
 		poetypes.BondedPoolName:     {authtypes.Burner, authtypes.Staking},
 		ibcfeetypes.ModuleName:      nil,
+		ewasmtypes.ModuleName:       {authtypes.Burner},
 	}
 
 	Upgrades = []upgrades.Upgrade{v2.Upgrade, v3.Upgrade}
@@ -197,6 +203,7 @@ type TgradeApp struct {
 	authzKeeper      authzkeeper.Keeper
 	twasmKeeper      twasmkeeper.Keeper
 	poeKeeper        poekeeper.Keeper
+	EwasmKeeper      ewasmkeeper.Keeper
 
 	scopedIBCKeeper      capabilitykeeper.ScopedKeeper
 	scopedICAHostKeeper  capabilitykeeper.ScopedKeeper
@@ -242,6 +249,7 @@ func NewTgradeApp(
 		ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
 		feegrant.StoreKey, authzkeeper.StoreKey, wasm.StoreKey, poe.StoreKey, icahosttypes.StoreKey,
 		ibcfeetypes.StoreKey,
+		ewasmtypes.StoreKey,
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -436,6 +444,18 @@ func NewTgradeApp(
 		app.twasmKeeper,
 		app.accountKeeper,
 	)
+
+	app.EwasmKeeper = ewasmkeeper.NewKeeper(
+		appCodec,
+		keys[ewasmtypes.StoreKey],
+		app.getSubspace(ewasmtypes.ModuleName),
+		app.interfaceRegistry,
+		app.bankKeeper,
+		app.accountKeeper,
+		&app.poeKeeper,
+		app.twasmKeeper,
+	)
+
 	/****  Module Options ****/
 
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
@@ -468,6 +488,7 @@ func NewTgradeApp(
 		ibcfee.NewAppModule(app.ibcFeeKeeper),
 		globalfee.NewAppModule(app.getSubspace(globalfee.ModuleName)),
 		icaModule,
+		ewasm.NewAppModule(appCodec, app.EwasmKeeper),
 		crisis.NewAppModule(&app.crisisKeeper, skipGenesisInvariants),
 	)
 
@@ -494,6 +515,7 @@ func NewTgradeApp(
 		poe.ModuleName,
 		twasm.ModuleName,
 		globalfee.ModuleName,
+		ewasmtypes.ModuleName,
 	)
 	app.mm.SetOrderEndBlockers(
 		crisistypes.ModuleName, // should be first
@@ -513,6 +535,7 @@ func NewTgradeApp(
 		globalfee.ModuleName,
 		twasm.ModuleName,
 		poe.ModuleName, // poe after twasm to have valset update at the end
+		ewasmtypes.ModuleName,
 	)
 
 	// NOTE: The poe module must occur after staking so that pools are
@@ -542,6 +565,7 @@ func NewTgradeApp(
 		// poe after wasm contract instantiation
 		poe.ModuleName,
 		globalfee.ModuleName,
+		ewasmtypes.ModuleName,
 	)
 
 	// Uncomment if you want to set a custom migration order here.
@@ -787,6 +811,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(twasm.ModuleName)
 	paramsKeeper.Subspace(globalfee.ModuleName)
 	paramsKeeper.Subspace(poe.ModuleName)
+	paramsKeeper.Subspace(ewasmtypes.ModuleName)
 
 	return paramsKeeper
 }

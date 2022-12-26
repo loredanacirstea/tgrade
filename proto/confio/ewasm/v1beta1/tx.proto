@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package confio.ewasm.v1beta1;
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/any.proto";
+
+option go_package = "github.com/confio/tgrade/x/ewasm/types";
+
+// Msg defines the ewasm Msg service.
+service Msg {
+
+}
