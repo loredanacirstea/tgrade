@@ -207,12 +207,23 @@ func (suite *KeeperTestSuite) CommitAfter(t time.Duration) {
 var DEFAULT_GAS_PRICE = "0.05utgd"
 var DEFAULT_GAS_LIMIT = uint64(5_000_000)
 
-func (s *KeeperTestSuite) prepareCosmosTx(account simulation.Account, msgs ...sdk.Msg) []byte {
+func (s *KeeperTestSuite) prepareCosmosTx(account simulation.Account, msgs []sdk.Msg, gasLimit *uint64, gasPrice *string) []byte {
 	encodingConfig := app.MakeEncodingConfig()
 	txBuilder := encodingConfig.TxConfig.NewTxBuilder()
+	var parsedGasPrices sdk.DecCoins
+	var err error
 
-	txBuilder.SetGasLimit(DEFAULT_GAS_LIMIT)
-	parsedGasPrices, err := sdk.ParseDecCoins(DEFAULT_GAS_PRICE)
+	if gasLimit != nil {
+		txBuilder.SetGasLimit(*gasLimit)
+	} else {
+		txBuilder.SetGasLimit(DEFAULT_GAS_LIMIT)
+	}
+
+	if gasPrice != nil {
+		parsedGasPrices, err = sdk.ParseDecCoins(*gasPrice)
+	} else {
+		parsedGasPrices, err = sdk.ParseDecCoins(DEFAULT_GAS_PRICE)
+	}
 	s.Require().NoError(err)
 	feeAmount := parsedGasPrices.AmountOf("utgd").MulInt64(int64(DEFAULT_GAS_LIMIT)).RoundInt()
 
@@ -263,7 +274,14 @@ func (s *KeeperTestSuite) prepareCosmosTx(account simulation.Account, msgs ...sd
 }
 
 func (s *KeeperTestSuite) DeliverTx(account simulation.Account, msgs ...sdk.Msg) abci.ResponseDeliverTx {
-	bz := s.prepareCosmosTx(account, msgs...)
+	bz := s.prepareCosmosTx(account, msgs, nil, nil)
+	req := abci.RequestDeliverTx{Tx: bz}
+	res := s.app.BaseApp.DeliverTx(req)
+	return res
+}
+
+func (s *KeeperTestSuite) DeliverTxWithOpts(account simulation.Account, msg sdk.Msg, gasLimit uint64, gasPrice *string) abci.ResponseDeliverTx {
+	bz := s.prepareCosmosTx(account, []sdk.Msg{msg}, &gasLimit, gasPrice)
 	req := abci.RequestDeliverTx{Tx: bz}
 	res := s.app.BaseApp.DeliverTx(req)
 	return res
