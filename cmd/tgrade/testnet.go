@@ -136,13 +136,14 @@ func InitTestnet(
 	singleMachine, vestingVals bool,
 ) error {
 	if chainID == "" {
-		chainID = "chain-" + tmrand.NewRand().Str(6)
+		chainID = "chain-5000" + tmrand.NewRand().Str(6)
 	}
 
 	nodeIDs := make([]string, numValidators)
 	valPubKeys := make([]cryptotypes.PubKey, numValidators)
 
 	appConfig := srvconfig.DefaultConfig()
+
 	appConfig.MinGasPrices = minGasPrices
 	appConfig.API.Enable = true
 	appConfig.Telemetry.Enabled = true

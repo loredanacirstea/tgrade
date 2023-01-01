@@ -59,7 +59,7 @@ func TestTgradeGenesisExportImport(t *testing.T) {
 	now := time.Now().UTC()
 	for i := 0; i < 3; i++ { // add some blocks
 		header := tmproto.Header{
-			ChainID: "testing-1",
+			ChainID: "testing-5000-1",
 			Height:  int64(2 + i),
 			Time:    now.Add(time.Duration(i+1) * time.Hour), // big step > epoch
 			AppHash: []byte(fmt.Sprintf("myAppHash%d", i)),

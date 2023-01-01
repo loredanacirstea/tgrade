@@ -78,7 +78,7 @@ func (suite *KeeperTestSuite) SetupApp() {
 	// cfg.SetBech32PrefixForConsensusNode(app.Bech32PrefixConsAddr, app.Bech32PrefixConsPub)
 	// cfg.SetAddressVerifier(wasmtypes.VerifyAddressLen())
 
-	chainId := "testing-1"
+	chainId := "testing-5000-1"
 	db := db.NewMemDB()
 	var emptyWasmOpts []wasm.Option
 	gapp := app.NewTgradeApp(log.NewTMLogger(log.NewSyncWriter(os.Stdout)), db, nil, true, map[int64]bool{}, app.DefaultNodeHome, 0, app.MakeEncodingConfig(), app.EmptyBaseAppOptions{}, emptyWasmOpts)

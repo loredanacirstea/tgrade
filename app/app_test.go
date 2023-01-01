@@ -154,7 +154,7 @@ func TestIBCKeeperLazyInitialization(t *testing.T) {
 	)
 	gapp.Commit()
 	// store some historic information
-	header := tmproto.Header{ChainID: "testing-1", Height: 2, Time: now, AppHash: []byte("myAppHash")}
+	header := tmproto.Header{ChainID: "testing-5000-1", Height: 2, Time: now, AppHash: []byte("myAppHash")}
 	gapp.BaseApp.BeginBlock(abci.RequestBeginBlock{Header: header})
 	gapp.Commit()
 

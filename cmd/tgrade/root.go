@@ -35,6 +35,9 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
+	ethermintserver "github.com/confio/tgrade/server"
+	servercfg "github.com/confio/tgrade/server/config"
+
 	"github.com/confio/tgrade/app"
 	appparams "github.com/confio/tgrade/app/params"
 	"github.com/confio/tgrade/x/poe/client/cli"
@@ -94,7 +97,9 @@ func NewRootCmd() (*cobra.Command, appparams.EncodingConfig) {
 				return err
 			}
 
-			return server.InterceptConfigsPreRunHandler(cmd, "", nil)
+			customAppTemplate, customAppConfig := servercfg.AppConfig(app.BaseCoinUnit)
+
+			return server.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig)
 		},
 	}
 
@@ -120,7 +125,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig appparams.EncodingConfig
 	ac := appCreator{
 		encCfg: encodingConfig,
 	}
-	server.AddCommands(rootCmd, app.DefaultNodeHome, ac.newApp, ac.appExport, addModuleInitFlags)
+	ethermintserver.AddCommands(rootCmd, app.DefaultNodeHome, ac.newApp, ac.appExport, addModuleInitFlags)
 	extendUnsafeResetAllCmd(rootCmd)
 
 	// add keybase, auxiliary RPC, query, and tx child commands

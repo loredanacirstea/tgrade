@@ -8,8 +8,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	// wasmvmtypes "github.com/CosmWasm/wasmvm/types"
-	// twasmcontract "github.com/confio/tgrade/x/twasm/contract"
 )
 
 var (
@@ -20,7 +18,7 @@ var (
 	//go:embed contracts/opcodes.wasm
 	opcodeswasm []byte
 
-	//go:embed contracts/opcodes_yul.wasm
+	//go:embed contracts/opcodes_yul2.wasm
 	opcodesyulwasm []byte
 
 	//go:embed contracts/cwargs2.wasm

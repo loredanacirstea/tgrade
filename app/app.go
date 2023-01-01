@@ -84,6 +84,10 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/evmos/ethermint/x/feemarket"
+	feemarketkeeper "github.com/evmos/ethermint/x/feemarket/keeper"
+	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
+
 	appparams "github.com/confio/tgrade/app/params"
 	"github.com/confio/tgrade/x/globalfee"
 	"github.com/confio/tgrade/x/poe"
@@ -93,6 +97,7 @@ import (
 	"github.com/confio/tgrade/x/twasm"
 	twasmkeeper "github.com/confio/tgrade/x/twasm/keeper"
 
+	srvflags "github.com/confio/tgrade/server/flags"
 	"github.com/confio/tgrade/x/ewasm"
 	ewasmkeeper "github.com/confio/tgrade/x/ewasm/keeper"
 	ewasmtypes "github.com/confio/tgrade/x/ewasm/types"
@@ -154,6 +159,7 @@ var (
 		ica.AppModuleBasic{},
 		ibcfee.AppModuleBasic{},
 		ewasm.AppModuleBasic{},
+		feemarket.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -204,6 +210,7 @@ type TgradeApp struct {
 	twasmKeeper      twasmkeeper.Keeper
 	poeKeeper        poekeeper.Keeper
 	EwasmKeeper      ewasmkeeper.Keeper
+	FeeMarketKeeper  feemarketkeeper.Keeper
 
 	scopedIBCKeeper      capabilitykeeper.ScopedKeeper
 	scopedICAHostKeeper  capabilitykeeper.ScopedKeeper
@@ -250,8 +257,9 @@ func NewTgradeApp(
 		feegrant.StoreKey, authzkeeper.StoreKey, wasm.StoreKey, poe.StoreKey, icahosttypes.StoreKey,
 		ibcfeetypes.StoreKey,
 		ewasmtypes.StoreKey,
+		feemarkettypes.StoreKey,
 	)
-	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
+	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey, ewasmtypes.TransientKey, feemarkettypes.TransientKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
 	app := &TgradeApp{
@@ -383,6 +391,7 @@ func NewTgradeApp(
 	if err != nil {
 		panic("error while reading wasm config: " + err.Error())
 	}
+	twasmConfig.WasmConfig.ContractDebugMode = true
 
 	// The last arguments can contain custom message handlers, and custom query handlers,
 	// if we want to allow any custom callbacks
@@ -445,13 +454,22 @@ func NewTgradeApp(
 		app.accountKeeper,
 	)
 
+	app.FeeMarketKeeper = feemarketkeeper.NewKeeper(
+		appCodec, app.getSubspace(feemarkettypes.ModuleName), keys[feemarkettypes.StoreKey], tkeys[feemarkettypes.TransientKey],
+	)
+	tracer := cast.ToString(appOpts.Get(srvflags.EVMTracer))
+
 	app.EwasmKeeper = ewasmkeeper.NewKeeper(
 		appCodec,
 		keys[ewasmtypes.StoreKey],
+		tkeys[ewasmtypes.StoreKey],
 		app.getSubspace(ewasmtypes.ModuleName),
 		app.interfaceRegistry,
-		app.bankKeeper,
 		app.accountKeeper,
+		app.bankKeeper,
+		nil,
+		app.FeeMarketKeeper,
+		tracer,
 		&app.poeKeeper,
 		app.twasmKeeper,
 	)
@@ -489,6 +507,7 @@ func NewTgradeApp(
 		globalfee.NewAppModule(app.getSubspace(globalfee.ModuleName)),
 		icaModule,
 		ewasm.NewAppModule(appCodec, app.EwasmKeeper),
+		feemarket.NewAppModule(app.FeeMarketKeeper),
 		crisis.NewAppModule(&app.crisisKeeper, skipGenesisInvariants),
 	)
 
@@ -499,6 +518,7 @@ func NewTgradeApp(
 	app.mm.SetOrderBeginBlockers(
 		upgradetypes.ModuleName,
 		capabilitytypes.ModuleName,
+		feemarkettypes.ModuleName,
 		authtypes.ModuleName,
 		banktypes.ModuleName,
 		crisistypes.ModuleName,
@@ -536,6 +556,7 @@ func NewTgradeApp(
 		twasm.ModuleName,
 		poe.ModuleName, // poe after twasm to have valset update at the end
 		ewasmtypes.ModuleName,
+		feemarkettypes.ModuleName,
 	)
 
 	// NOTE: The poe module must occur after staking so that pools are
@@ -566,6 +587,7 @@ func NewTgradeApp(
 		poe.ModuleName,
 		globalfee.ModuleName,
 		ewasmtypes.ModuleName,
+		feemarkettypes.ModuleName,
 	)
 
 	// Uncomment if you want to set a custom migration order here.
@@ -603,6 +625,8 @@ func NewTgradeApp(
 		ibc.NewAppModule(app.ibcKeeper),
 		transfer.NewAppModule(app.transferKeeper),
 		globalfee.NewAppModule(app.getSubspace(globalfee.ModuleName)),
+		// ewasm.NewAppModule(app.EwasmKeeper),
+		feemarket.NewAppModule(app.FeeMarketKeeper),
 	)
 
 	app.sm.RegisterStoreDecoders()
@@ -624,6 +648,7 @@ func NewTgradeApp(
 			TXCounterStoreKey: keys[twasm.StoreKey],
 			GlobalFeeSubspace: app.getSubspace(globalfee.ModuleName),
 			ContractSource:    &app.poeKeeper,
+			// FeeMarketKeeper: app.FeeMarketKeeper,
 		},
 	)
 	if err != nil {
@@ -812,6 +837,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(globalfee.ModuleName)
 	paramsKeeper.Subspace(poe.ModuleName)
 	paramsKeeper.Subspace(ewasmtypes.ModuleName)
+	paramsKeeper.Subspace(feemarkettypes.ModuleName)
 
 	return paramsKeeper
 }
