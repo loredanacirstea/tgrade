@@ -11,7 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 
 	evmtypes "github.com/confio/tgrade/x/ewasm/types"
-	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
+	feemarkettypes "github.com/confio/tgrade/x/feemarket/types"
 )
 
 // QueryClient defines a gRPC Client used for:

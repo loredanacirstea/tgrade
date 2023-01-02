@@ -8,12 +8,12 @@ import (
 	rpctypes "github.com/confio/tgrade/rpc/types"
 	evmtypes "github.com/confio/tgrade/x/ewasm/types"
 	ethermint "github.com/confio/tgrade/x/ewasm/types/evmtypes"
+	feemarkettypes "github.com/confio/tgrade/x/feemarket/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
-	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 

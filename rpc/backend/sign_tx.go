@@ -16,7 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"github.com/pkg/errors"
 
-	"github.com/evmos/ethermint/ethereum/eip712"
+	"github.com/confio/tgrade/ethereum/eip712"
 )
 
 // SendTransaction sends transaction based on received args using Node's key to sign it

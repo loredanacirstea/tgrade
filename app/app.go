@@ -84,9 +84,9 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/evmos/ethermint/x/feemarket"
-	feemarketkeeper "github.com/evmos/ethermint/x/feemarket/keeper"
-	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
+	"github.com/confio/tgrade/x/feemarket"
+	feemarketkeeper "github.com/confio/tgrade/x/feemarket/keeper"
+	feemarkettypes "github.com/confio/tgrade/x/feemarket/types"
 
 	appparams "github.com/confio/tgrade/app/params"
 	"github.com/confio/tgrade/x/globalfee"

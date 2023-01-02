@@ -18,7 +18,7 @@ import (
 	"github.com/confio/tgrade/rpc/backend/mocks"
 	ethrpc "github.com/confio/tgrade/rpc/types"
 	evmtypes "github.com/confio/tgrade/x/ewasm/types"
-	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
+	feemarkettypes "github.com/confio/tgrade/x/feemarket/types"
 )
 
 func (suite *BackendTestSuite) TestBlockNumber() {

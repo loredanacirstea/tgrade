@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/tgrade/confio/x/ewasm/statedb"
+	"github.com/confio/tgrade/x/ewasm/statedb"
 )
 
 var (

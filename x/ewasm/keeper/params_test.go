@@ -1,6 +1,8 @@
 package keeper_test
 
-import "github.com/confio/tgrade/x/ewasm/types"
+import (
+	"github.com/confio/tgrade/x/ewasm/types"
+)
 
 func (suite *KeeperTestSuite) TestParams() {
 	params := suite.app.EwasmKeeper.GetParams(suite.ctx)
