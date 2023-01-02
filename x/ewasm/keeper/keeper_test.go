@@ -118,7 +118,7 @@ func (suite *KeeperTestSuite) SetupApp() {
 
 	suite.deliverTx = UnAuthorizedDeliverTXFn(t, suite.ctx, suite.app.EwasmKeeper.PoeKeeper, suite.app.EwasmKeeper.TwasmKeeper.GetContractKeeper(), encodingConfig.TxConfig.TxDecoder())
 
-	suite.faucet = wasmkeeper.NewTestFaucet(t, suite.ctx, suite.app.EwasmKeeper.BankKeeper, twasmtypes.ModuleName, sdk.NewCoin(suite.denom, sdk.NewInt(100_000_000_000)))
+	suite.faucet = wasmkeeper.NewTestFaucet(t, suite.ctx, suite.app.EwasmKeeper.BankKeeper(), twasmtypes.ModuleName, sdk.NewCoin(suite.denom, sdk.NewInt(100_000_000_000)))
 }
 
 func SetupWithSingleValidatorGenTX(t *testing.T, genesisState app.GenesisState) {
@@ -232,7 +232,7 @@ func (s *KeeperTestSuite) prepareCosmosTx(account simulation.Account, msgs []sdk
 	err = txBuilder.SetMsgs(msgs...)
 	s.Require().NoError(err)
 
-	seq, err := s.app.EwasmKeeper.AccountKeeper.GetSequence(s.ctx, account.Address)
+	seq, err := s.app.EwasmKeeper.AccountKeeper().GetSequence(s.ctx, account.Address)
 	s.Require().NoError(err)
 	fmt.Println("----sender seq--", seq, account.Address.String())
 
@@ -251,7 +251,7 @@ func (s *KeeperTestSuite) prepareCosmosTx(account simulation.Account, msgs []sdk
 	s.Require().NoError(err)
 
 	// Second round: all signer infos are set, so each signer can sign.
-	accNumber := s.app.EwasmKeeper.AccountKeeper.GetAccount(s.ctx, account.Address).GetAccountNumber()
+	accNumber := s.app.EwasmKeeper.AccountKeeper().GetAccount(s.ctx, account.Address).GetAccountNumber()
 	signerData := authsigning.SignerData{
 		ChainID:       s.ctx.ChainID(),
 		AccountNumber: accNumber,

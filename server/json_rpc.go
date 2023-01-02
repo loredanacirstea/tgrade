@@ -13,10 +13,10 @@ import (
 	ethlog "github.com/ethereum/go-ethereum/log"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 
-	// "github.com/evmos/ethermint/rpc"
+	// "github.com/confio/tgrade/rpc"
 
-	"github.com/evmos/ethermint/server/config"
-	ethermint "github.com/evmos/ethermint/types"
+	"github.com/confio/tgrade/server/config"
+	ethermint "github.com/confio/tgrade/x/ewasm/types/evmtypes"
 
 	"github.com/confio/tgrade/rpc"
 	// "github.com/confio/tgrade/server/config"

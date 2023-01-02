@@ -14,18 +14,18 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	evmtypes "github.com/confio/tgrade/x/ewasm/types"
 
 	stderrors "github.com/pkg/errors"
 
 	"github.com/cosmos/cosmos-sdk/server"
 
+	"github.com/confio/tgrade/rpc/backend"
+	rpctypes "github.com/confio/tgrade/rpc/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/evmos/ethermint/rpc/backend"
-	rpctypes "github.com/evmos/ethermint/rpc/types"
 	"github.com/tendermint/tendermint/libs/log"
 )
 

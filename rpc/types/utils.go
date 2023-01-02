@@ -13,7 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	evmtypes "github.com/confio/tgrade/x/ewasm/types"
 	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
 
 	"github.com/ethereum/go-ethereum/common"

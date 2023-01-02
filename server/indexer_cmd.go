@@ -5,9 +5,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/confio/tgrade/indexer"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
-	"github.com/evmos/ethermint/indexer"
 	tmnode "github.com/tendermint/tendermint/node"
 	sm "github.com/tendermint/tendermint/state"
 	tmstore "github.com/tendermint/tendermint/store"

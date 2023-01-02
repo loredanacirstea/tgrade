@@ -16,8 +16,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	etherminttypes "github.com/evmos/ethermint/x/evm/types"
-
 	"github.com/confio/tgrade/x/ewasm/client/cli"
 	"github.com/confio/tgrade/x/ewasm/keeper"
 	"github.com/confio/tgrade/x/ewasm/types"
@@ -122,8 +120,8 @@ func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sd
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	// types.RegisterMsgServer(cfg.MsgServer(), am.keeper)
-	etherminttypes.RegisterQueryServer(cfg.QueryServer(), am.keeper.EthermintKeeper())
+	types.RegisterMsgServer(cfg.MsgServer(), &am.keeper)
+	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 }
 
 // RegisterInvariants registers the capability module's invariants.

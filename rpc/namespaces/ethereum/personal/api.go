@@ -8,8 +8,8 @@ import (
 
 	"github.com/confio/tgrade/rpc/backend"
 
-	"github.com/evmos/ethermint/crypto/hd"
-	ethermint "github.com/evmos/ethermint/types"
+	"github.com/confio/tgrade/crypto/hd"
+	ethermint "github.com/confio/tgrade/x/ewasm/types/evmtypes"
 
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -21,7 +21,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	evmtypes "github.com/confio/tgrade/x/ewasm/types"
 )
 
 // PrivateAccountAPI is the personal_ prefixed set of APIs in the Web3 JSON-RPC spec.

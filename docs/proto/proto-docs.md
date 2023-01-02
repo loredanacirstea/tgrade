@@ -4,51 +4,48 @@
 
 ## Table of Contents
 
-- [confio/globalfee/v1beta1/genesis.proto](#confio/globalfee/v1beta1/genesis.proto)
-    - [GenesisState](#confio.globalfee.v1beta1.GenesisState)
-    - [Params](#confio.globalfee.v1beta1.Params)
-  
-- [confio/globalfee/v1beta1/query.proto](#confio/globalfee/v1beta1/query.proto)
-    - [QueryMinimumGasPricesRequest](#confio.globalfee.v1beta1.QueryMinimumGasPricesRequest)
-    - [QueryMinimumGasPricesResponse](#confio.globalfee.v1beta1.QueryMinimumGasPricesResponse)
-  
-    - [Query](#confio.globalfee.v1beta1.Query)
+- [confio/crypto/v1/ethsecp256k1/keys.proto](#confio/crypto/v1/ethsecp256k1/keys.proto)
+    - [PrivKey](#confio.crypto.v1.ethsecp256k1.PrivKey)
+    - [PubKey](#confio.crypto.v1.ethsecp256k1.PubKey)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="confio/globalfee/v1beta1/genesis.proto"></a>
+<a name="confio/crypto/v1/ethsecp256k1/keys.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## confio/globalfee/v1beta1/genesis.proto
+## confio/crypto/v1/ethsecp256k1/keys.proto
 
 
 
-<a name="confio.globalfee.v1beta1.GenesisState"></a>
+<a name="confio.crypto.v1.ethsecp256k1.PrivKey"></a>
 
-### GenesisState
-GenesisState - initial state of module
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `params` | [Params](#confio.globalfee.v1beta1.Params) |  | Params of this module |
-
-
-
-
-
-
-<a name="confio.globalfee.v1beta1.Params"></a>
-
-### Params
-Params defines the set of module parameters.
+### PrivKey
+PrivKey defines a type alias for an ecdsa.PrivateKey that implements
+Tendermint's PrivateKey interface.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `minimum_gas_prices` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated | Minimum stores the minimum gas price(s) for all TX on the chain. When multiple coins are defined then they are accepted alternatively. The list must be sorted by denoms asc. No duplicate denoms or zero amount values allowed. For more information see https://docs.cosmos.network/master/modules/auth/01_concepts.html |
+| `key` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="confio.crypto.v1.ethsecp256k1.PubKey"></a>
+
+### PubKey
+PubKey defines a type alias for an ecdsa.PublicKey that implements
+Tendermint's PubKey interface. It represents the 33-byte compressed public
+key format.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [bytes](#bytes) |  |  |
 
 
 
@@ -59,59 +56,6 @@ Params defines the set of module parameters.
  <!-- end enums -->
 
  <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="confio/globalfee/v1beta1/query.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## confio/globalfee/v1beta1/query.proto
-
-
-
-<a name="confio.globalfee.v1beta1.QueryMinimumGasPricesRequest"></a>
-
-### QueryMinimumGasPricesRequest
-QueryMinimumGasPricesRequest is the request type for the
-Query/MinimumGasPrices RPC method.
-
-
-
-
-
-
-<a name="confio.globalfee.v1beta1.QueryMinimumGasPricesResponse"></a>
-
-### QueryMinimumGasPricesResponse
-QueryMinimumGasPricesResponse is the response type for the
-Query/MinimumGasPrices RPC method.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `minimum_gas_prices` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
-
-<a name="confio.globalfee.v1beta1.Query"></a>
-
-### Query
-Query defines the gRPC querier service.
-
-| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
-| ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `MinimumGasPrices` | [QueryMinimumGasPricesRequest](#confio.globalfee.v1beta1.QueryMinimumGasPricesRequest) | [QueryMinimumGasPricesResponse](#confio.globalfee.v1beta1.QueryMinimumGasPricesResponse) |  | GET|/tgrade/globalfee/v1beta1/minimum_gas_prices|
 
  <!-- end services -->
 

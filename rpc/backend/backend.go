@@ -16,14 +16,16 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
-	"github.com/evmos/ethermint/crypto/hd"
-	rpctypes "github.com/evmos/ethermint/rpc/types"
-	"github.com/evmos/ethermint/server/config"
-	ethermint "github.com/evmos/ethermint/types"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
+
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/log"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
+
+	"github.com/confio/tgrade/crypto/hd"
+	rpctypes "github.com/confio/tgrade/rpc/types"
+	"github.com/confio/tgrade/server/config"
+	"github.com/confio/tgrade/x/ewasm/types"
+	evmtypes "github.com/confio/tgrade/x/ewasm/types/evmtypes"
 )
 
 // BackendI implements the Cosmos and EVM backend.
@@ -61,7 +63,7 @@ type EVMBackend interface {
 
 	// Sign Tx
 	Sign(address common.Address, data hexutil.Bytes) (hexutil.Bytes, error)
-	SendTransaction(args evmtypes.TransactionArgs) (common.Hash, error)
+	SendTransaction(args types.TransactionArgs) (common.Hash, error)
 	SignTypedData(address common.Address, typedData apitypes.TypedData) (hexutil.Bytes, error)
 
 	// Blocks Info
@@ -78,7 +80,7 @@ type EVMBackend interface {
 	GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint
 	GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber) *hexutil.Uint
 	BlockBloom(blockRes *tmrpctypes.ResultBlockResults) (ethtypes.Bloom, error)
-	GetEthereumMsgsFromTendermintBlock(block *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) []*evmtypes.MsgEthereumTx
+	GetEthereumMsgsFromTendermintBlock(block *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) []*types.MsgEthereumTx
 	HeaderByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
 	EthBlockFromTendermint(resBlock *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults, fullTx bool) (map[string]interface{}, error)
@@ -104,19 +106,19 @@ type EVMBackend interface {
 
 	// Tx Info
 	GetTransactionByHash(txHash common.Hash) (*rpctypes.RPCTransaction, error)
-	GetTxByEthHash(txHash common.Hash) (*ethermint.TxResult, error)
-	GetTxByTxIndex(height int64, txIndex uint) (*ethermint.TxResult, error)
+	GetTxByEthHash(txHash common.Hash) (*evmtypes.TxResultIndexer, error)
+	GetTxByTxIndex(height int64, txIndex uint) (*evmtypes.TxResultIndexer, error)
 	GetTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock, idx hexutil.Uint) (*rpctypes.RPCTransaction, error)
 	GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error)
 	GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error)
 	GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockNumber, idx hexutil.Uint) (*rpctypes.RPCTransaction, error)
 
 	// Send Transaction
-	Resend(args evmtypes.TransactionArgs, gasPrice *hexutil.Big, gasLimit *hexutil.Uint64) (common.Hash, error)
+	Resend(args types.TransactionArgs, gasPrice *hexutil.Big, gasLimit *hexutil.Uint64) (common.Hash, error)
 	SendRawTransaction(data hexutil.Bytes) (common.Hash, error)
-	SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.TransactionArgs, error)
-	EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rpctypes.BlockNumber) (hexutil.Uint64, error)
-	DoCall(args evmtypes.TransactionArgs, blockNr rpctypes.BlockNumber) (*evmtypes.MsgEthereumTxResponse, error)
+	SetTxDefaults(args types.TransactionArgs) (types.TransactionArgs, error)
+	EstimateGas(args types.TransactionArgs, blockNrOptional *rpctypes.BlockNumber) (hexutil.Uint64, error)
+	DoCall(args types.TransactionArgs, blockNr rpctypes.BlockNumber) (*types.MsgEthereumTxResponse, error)
 
 	// Filter API
 	GetLogs(hash common.Hash) ([][]*ethtypes.Log, error)
@@ -124,13 +126,13 @@ type EVMBackend interface {
 	BloomStatus() (uint64, uint64)
 
 	// Tracing
-	TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (interface{}, error)
-	TraceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfig, block *tmrpctypes.ResultBlock) ([]*evmtypes.TxTraceResult, error)
+	TraceTransaction(hash common.Hash, config *types.TraceConfig) (interface{}, error)
+	TraceBlock(height rpctypes.BlockNumber, config *types.TraceConfig, block *tmrpctypes.ResultBlock) ([]*types.TxTraceResult, error)
 }
 
 var _ BackendI = (*Backend)(nil)
 
-var bAttributeKeyEthereumBloom = []byte(evmtypes.AttributeKeyEthereumBloom)
+var bAttributeKeyEthereumBloom = []byte(types.AttributeKeyEthereumBloom)
 
 // Backend implements the BackendI interface
 type Backend struct {
@@ -141,7 +143,7 @@ type Backend struct {
 	chainID             *big.Int
 	cfg                 config.Config
 	allowUnprotectedTxs bool
-	indexer             ethermint.EVMTxIndexer
+	indexer             evmtypes.EVMTxIndexer
 }
 
 // NewBackend creates a new Backend instance for cosmos and ethereum namespaces
@@ -150,9 +152,9 @@ func NewBackend(
 	logger log.Logger,
 	clientCtx client.Context,
 	allowUnprotectedTxs bool,
-	indexer ethermint.EVMTxIndexer,
+	indexer evmtypes.EVMTxIndexer,
 ) *Backend {
-	chainID, err := ethermint.ParseChainID(clientCtx.ChainID)
+	chainID, err := evmtypes.ParseChainID(clientCtx.ChainID)
 	if err != nil {
 		panic(err)
 	}

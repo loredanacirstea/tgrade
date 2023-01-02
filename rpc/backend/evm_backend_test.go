@@ -13,10 +13,11 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/evmos/ethermint/rpc/backend/mocks"
-	ethrpc "github.com/evmos/ethermint/rpc/types"
-	"github.com/evmos/ethermint/tests"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	"github.com/confio/tgrade/tests"
+
+	"github.com/confio/tgrade/rpc/backend/mocks"
+	ethrpc "github.com/confio/tgrade/rpc/types"
+	evmtypes "github.com/confio/tgrade/x/ewasm/types"
 	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
 )
 

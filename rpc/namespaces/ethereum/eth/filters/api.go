@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/confio/tgrade/rpc/types"
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/evmos/ethermint/rpc/types"
 
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -20,7 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/rpc"
 
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	evmtypes "github.com/confio/tgrade/x/ewasm/types"
 )
 
 // FilterAPI gathers

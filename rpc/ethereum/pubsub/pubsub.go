@@ -7,13 +7,16 @@ import (
 	"github.com/pkg/errors"
 
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
-
-	"github.com/evmos/ethermint/rpc/ethereum/pubsub"
 )
 
-type UnsubscribeFunc = pubsub.UnsubscribeFunc
+type UnsubscribeFunc func()
 
-type EventBus = pubsub.EventBus
+type EventBus interface {
+	AddTopic(name string, src <-chan coretypes.ResultEvent) error
+	RemoveTopic(name string)
+	Subscribe(name string) (<-chan coretypes.ResultEvent, UnsubscribeFunc, error)
+	Topics() []string
+}
 
 type memEventBus struct {
 	topics          map[string]<-chan coretypes.ResultEvent

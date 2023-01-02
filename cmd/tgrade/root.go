@@ -35,7 +35,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
-	ethermintserver "github.com/confio/tgrade/server"
+	ewasmserver "github.com/confio/tgrade/server"
 	servercfg "github.com/confio/tgrade/server/config"
 
 	"github.com/confio/tgrade/app"
@@ -125,7 +125,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig appparams.EncodingConfig
 	ac := appCreator{
 		encCfg: encodingConfig,
 	}
-	ethermintserver.AddCommands(rootCmd, app.DefaultNodeHome, ac.newApp, ac.appExport, addModuleInitFlags)
+	ewasmserver.AddCommands(rootCmd, app.DefaultNodeHome, ac.newApp, ac.appExport, addModuleInitFlags)
 	extendUnsafeResetAllCmd(rootCmd)
 
 	// add keybase, auxiliary RPC, query, and tx child commands

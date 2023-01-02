@@ -3,10 +3,10 @@ package backend
 import (
 	"testing"
 
+	"github.com/confio/tgrade/rpc/backend/mocks"
+	rpc "github.com/confio/tgrade/rpc/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/evmos/ethermint/rpc/backend/mocks"
-	rpc "github.com/evmos/ethermint/rpc/types"
 	mock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"

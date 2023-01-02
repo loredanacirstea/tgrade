@@ -30,9 +30,8 @@ import (
 	rpcfilters "github.com/confio/tgrade/rpc/namespaces/ethereum/eth/filters"
 	"github.com/confio/tgrade/rpc/types"
 
-	// "github.com/confio/tgrade/server/config"
-	"github.com/evmos/ethermint/server/config"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	"github.com/confio/tgrade/server/config"
+	evmtypes "github.com/confio/tgrade/x/ewasm/types"
 )
 
 type WebsocketsServer interface {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
+	evmtypes "github.com/confio/tgrade/x/ewasm/types"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -13,9 +14,9 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
-	"github.com/evmos/ethermint/ethereum/eip712"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/pkg/errors"
+
+	"github.com/evmos/ethermint/ethereum/eip712"
 )
 
 // SendTransaction sends transaction based on received args using Node's key to sign it

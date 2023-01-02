@@ -16,9 +16,9 @@ import (
 
 	"github.com/confio/tgrade/rpc/backend"
 
-	rpctypes "github.com/evmos/ethermint/rpc/types"
-	ethermint "github.com/evmos/ethermint/types"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	rpctypes "github.com/confio/tgrade/rpc/types"
+	evmtypes "github.com/confio/tgrade/x/ewasm/types"
+	ethermint "github.com/confio/tgrade/x/ewasm/types/evmtypes"
 )
 
 // The Ethereum API allows applications to connect to an Evmos node that is

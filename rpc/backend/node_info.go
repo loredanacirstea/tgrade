@@ -5,6 +5,11 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/confio/tgrade/crypto/ethsecp256k1"
+	rpctypes "github.com/confio/tgrade/rpc/types"
+	"github.com/confio/tgrade/server/config"
+	evmtypes "github.com/confio/tgrade/x/ewasm/types"
+	ethermint "github.com/confio/tgrade/x/ewasm/types/evmtypes"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdkcrypto "github.com/cosmos/cosmos-sdk/crypto"
@@ -17,11 +22,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/evmos/ethermint/crypto/ethsecp256k1"
-	rpctypes "github.com/evmos/ethermint/rpc/types"
-	"github.com/evmos/ethermint/server/config"
-	ethermint "github.com/evmos/ethermint/types"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 

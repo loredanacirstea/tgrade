@@ -10,9 +10,10 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	rpctypes "github.com/evmos/ethermint/rpc/types"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/pkg/errors"
+
+	rpctypes "github.com/confio/tgrade/rpc/types"
+	evmtypes "github.com/confio/tgrade/x/ewasm/types"
 )
 
 // GetCode returns the contract code at the given address and block number.
@@ -122,7 +123,7 @@ func (b *Backend) GetProof(address common.Address, storageKeys []string, blockNr
 		Balance:      (*hexutil.Big)(balance.BigInt()),
 		CodeHash:     common.HexToHash(res.CodeHash),
 		Nonce:        hexutil.Uint64(res.Nonce),
-		StorageHash:  common.Hash{}, // NOTE: Ethermint doesn't have a storage hash. TODO: implement?
+		StorageHash:  common.Hash{}, // NOTE: Ewasm doesn't have a storage hash. TODO: implement?
 		StorageProof: storageProofs,
 	}, nil
 }
