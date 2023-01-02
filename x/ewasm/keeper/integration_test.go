@@ -3,6 +3,7 @@ package keeper_test
 import (
 	_ "embed"
 	"encoding/hex"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -66,7 +67,7 @@ func (suite *KeeperTestSuite) TestEwasmOpcodes() {
 	s.Require().NoError(err)
 	s.Require().Equal(bytecode, wasmbin)
 
-	instantiateMsg := []byte(`{}`)
+	instantiateMsg := []byte(`{"data": "0x0022"}`)
 	instantiateCodeMsg := &wasmtypes.MsgInstantiateContract{
 		Sender: sender.Address.String(),
 		CodeID: codeId,
@@ -76,6 +77,7 @@ func (suite *KeeperTestSuite) TestEwasmOpcodes() {
 	res = suite.DeliverTxWithOpts(sender, instantiateCodeMsg, 235690, nil) // 135690
 	s.Require().True(res.IsOK(), res.GetLog())
 	suite.Commit()
+	fmt.Println("---res.GetLog()", res.GetLog())
 
 	// s.Require().True(false, "---")
 }
@@ -124,7 +126,7 @@ func (suite *KeeperTestSuite) TestEwasmWithoutConstructorArgs() {
 
 	keybz := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	queryres := s.app.EwasmKeeper.TwasmKeeper.QueryRaw(suite.ctx, contractAddress, keybz)
-	suite.Require().Equal("00000000000000000000000039b1bf12e9e21d78f0c76d192c26d47fa710ec99", hex.EncodeToString(queryres))
+	suite.Require().Equal("000000000000000000000000"+hex.EncodeToString(sender.Address.Bytes()), hex.EncodeToString(queryres))
 }
 
 func (suite *KeeperTestSuite) TestWasm() {
