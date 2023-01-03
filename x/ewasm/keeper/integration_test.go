@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/common"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 )
@@ -65,7 +66,7 @@ func (suite *KeeperTestSuite) TestEwasmOpcodes() {
 	s.Require().NoError(err)
 	s.Require().Equal(bytecode, wasmbin)
 
-	instantiateMsg := []byte(`{"data": "0x0022"}`)
+	instantiateMsg := []byte(`{"data": "0x"}`)
 	instantiateCodeMsg := &wasmtypes.MsgInstantiateContract{
 		Sender: sender.Address.String(),
 		CodeID: codeId,
@@ -75,7 +76,22 @@ func (suite *KeeperTestSuite) TestEwasmOpcodes() {
 	res = suite.DeliverTxWithOpts(sender, instantiateCodeMsg, 235690, nil) // 135690
 	s.Require().True(res.IsOK(), res.GetLog())
 	suite.Commit()
-	fmt.Println("---res.GetLog()", res.GetLog())
+
+	contractAddress := suite.GetContractAddressFromLog(res.GetLog())
+	contractAddressAcc, err := sdk.AccAddressFromBech32(contractAddress)
+	s.Require().NoError(err)
+	contractAddressComm := common.BytesToAddress(contractAddressAcc.Bytes())
+
+	executeMsg := []byte(`{"data": "0x0022"}`)
+	executeCodeMsg := &wasmtypes.MsgExecuteContract{
+		Sender:   sender.Address.String(),
+		Contract: contractAddress,
+		Msg:      executeMsg,
+		Funds:    sdk.Coins{},
+	}
+	res = suite.DeliverTxWithOpts(sender, executeCodeMsg, 235690, nil) // 135690
+	s.Require().True(res.IsOK(), res.GetLog())
+	suite.Commit()
 
 	// s.Require().True(false, "---")
 }
