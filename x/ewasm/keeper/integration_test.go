@@ -3,10 +3,8 @@ package keeper_test
 import (
 	_ "embed"
 	"encoding/hex"
-	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/ethereum/go-ethereum/common"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 )
@@ -66,7 +64,7 @@ func (suite *KeeperTestSuite) TestEwasmOpcodes() {
 	s.Require().NoError(err)
 	s.Require().Equal(bytecode, wasmbin)
 
-	instantiateMsg := []byte(`{"data": "0x"}`)
+	instantiateMsg := []byte(`{"data": "0x1212121212444444444444"}`)
 	instantiateCodeMsg := &wasmtypes.MsgInstantiateContract{
 		Sender: sender.Address.String(),
 		CodeID: codeId,
@@ -78,9 +76,6 @@ func (suite *KeeperTestSuite) TestEwasmOpcodes() {
 	suite.Commit()
 
 	contractAddress := suite.GetContractAddressFromLog(res.GetLog())
-	contractAddressAcc, err := sdk.AccAddressFromBech32(contractAddress)
-	s.Require().NoError(err)
-	contractAddressComm := common.BytesToAddress(contractAddressAcc.Bytes())
 
 	executeMsg := []byte(`{"data": "0x0022"}`)
 	executeCodeMsg := &wasmtypes.MsgExecuteContract{

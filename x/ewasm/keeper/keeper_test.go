@@ -105,7 +105,10 @@ func (suite *KeeperTestSuite) SetupApp() {
 	suite.app = gapp
 
 	now = time.Now().UTC()
-	header := tmproto.Header{ChainID: chainId, Height: 2, Time: now, AppHash: []byte("myAppHash")}
+	header := tmproto.Header{
+		ChainID: chainId, Height: 2, Time: now, AppHash: []byte("myAppHash"),
+		ProposerAddress: []byte{182, 108, 128, 84, 106, 186, 182, 110, 93, 95, 17, 148, 50, 158, 25, 187, 140, 206, 92, 21},
+	}
 	gapp.BaseApp.BeginBlock(abci.RequestBeginBlock{Header: header})
 
 	suite.ctx = gapp.BaseApp.NewContext(false, header)
