@@ -52,7 +52,7 @@ func (suite *BackendTestSuite) SetupTest() {
 	}
 
 	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
-	clientCtx := client.Context{}.WithChainID("tgrade-6000-1").
+	clientCtx := client.Context{}.WithChainID("tgrade_6000-1").
 		WithHeight(1).
 		WithTxConfig(encodingConfig.TxConfig).
 		WithKeyringDir(clientDir).

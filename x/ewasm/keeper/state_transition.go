@@ -190,7 +190,7 @@ func (k Keeper) GetHashFn(ctx sdk.Context) vm.GetHashFunc {
 // returning.
 //
 // For relevant discussion see: https://github.com/cosmos/cosmos-sdk/discussions/9072
-func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*types.MsgEthereumTxResponse, error) {
+func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction, from common.Address) (*types.MsgEthereumTxResponse, error) {
 	var (
 		bloom        *big.Int
 		bloomReceipt ethtypes.Bloom
@@ -202,12 +202,25 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 	}
 	txConfig := k.TxConfig(ctx, tx.Hash())
 
-	// get the signer according to the chain rules from the config and block height
-	signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(ctx.BlockHeight()))
-	msg, err := tx.AsMessage(signer, cfg.BaseFee)
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "failed to return ethereum transaction as core message")
-	}
+	// // get the signer according to the chain rules from the config and block height
+	// signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(ctx.BlockHeight()))
+	// msg, err := tx.AsMessage(signer, cfg.BaseFee)
+	// if err != nil {
+	// 	return nil, sdkerrors.Wrap(err, "failed to return ethereum transaction as core message")
+	// }
+
+	// nonce:      tx.Nonce(),
+	// gasLimit:   tx.Gas(),
+	// gasPrice:   new(big.Int).Set(tx.GasPrice()),
+	// gasFeeCap:  new(big.Int).Set(tx.GasFeeCap()),
+	// gasTipCap:  new(big.Int).Set(tx.GasTipCap()),
+	// to:         tx.To(),
+	// amount:     tx.Value(),
+	// data:       tx.Data(),
+	// accessList: tx.AccessList(),
+	// isFake:     false,
+
+	msg := ethtypes.NewMessage(from, tx.To(), tx.Nonce(), tx.Value(), tx.Gas(), new(big.Int).Set(tx.GasPrice()), new(big.Int).Set(tx.GasFeeCap()), new(big.Int).Set(tx.GasTipCap()), tx.Data(), tx.AccessList(), false)
 
 	// snapshot to contain the tx processing and post processing in same scope
 	var commit func()

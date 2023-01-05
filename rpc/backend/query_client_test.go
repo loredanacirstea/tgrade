@@ -63,6 +63,16 @@ func RegisterParamsInvalidHeight(queryClient *mocks.QueryClient, header *metadat
 		})
 }
 
+func RegisterParamsWithoutHeader(queryClient *mocks.QueryClient, height int64) {
+	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}).
+		Return(&evmtypes.QueryParamsResponse{Params: evmtypes.DefaultParams()}, nil)
+}
+
+func RegisterParamsWithoutHeaderError(queryClient *mocks.QueryClient, height int64) {
+	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}).
+		Return(nil, sdkerrors.ErrInvalidRequest)
+}
+
 // Params returns error
 func RegisterParamsError(queryClient *mocks.QueryClient, header *metadata.MD, height int64) {
 	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}, grpc.Header(header)).
@@ -152,7 +162,7 @@ func RegisterValidatorAccountError(queryClient *mocks.QueryClient) {
 func TestRegisterValidatorAccount(t *testing.T) {
 	queryClient := mocks.NewQueryClient(t)
 
-	validator := sdk.AccAddress(tests.GenerateAddress().Bytes())
+	validator := sdk.AccAddress(tests.GenerateRandomAccount().Address.Bytes())
 	RegisterValidatorAccount(queryClient, validator)
 	res, err := queryClient.ValidatorAccount(rpc.ContextWithHeight(1), &evmtypes.QueryValidatorAccountRequest{})
 	require.Equal(t, &evmtypes.QueryValidatorAccountResponse{AccountAddress: validator.String()}, res)

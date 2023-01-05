@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"os"
 	"strconv"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -19,6 +21,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -27,17 +30,19 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	db "github.com/tendermint/tm-db"
 
+	"github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 
-	"github.com/confio/tgrade/x/poe"
-	poekeeper "github.com/confio/tgrade/x/poe/keeper"
-	"github.com/confio/tgrade/x/poe/types"
+	"github.com/confio/tgrade/tests"
+	evmtypes "github.com/confio/tgrade/x/ewasm/types"
 	poetypes "github.com/confio/tgrade/x/poe/types"
 	twasmtypes "github.com/confio/tgrade/x/twasm/types"
 
 	"github.com/confio/tgrade/app"
+	"github.com/confio/tgrade/encoding"
 )
 
 type KeeperTestSuite struct {
@@ -49,6 +54,7 @@ type KeeperTestSuite struct {
 	h   *app.TestSupport
 	// queryClient types.QueryClient
 	// signer      keyring.Signer
+	ethSigner   ethtypes.Signer
 	consAddress sdk.ConsAddress
 	// validator   stakingtypes.Validator
 	denom     string
@@ -117,11 +123,9 @@ func (suite *KeeperTestSuite) SetupApp() {
 	params.EnableEwasm = true
 	suite.app.EwasmKeeper.SetParams(suite.ctx, params)
 
-	encodingConfig := app.MakeEncodingConfig()
-
-	suite.deliverTx = UnAuthorizedDeliverTXFn(t, suite.ctx, suite.app.EwasmKeeper.PoeKeeper, suite.app.EwasmKeeper.TwasmKeeper.GetContractKeeper(), encodingConfig.TxConfig.TxDecoder())
-
 	suite.faucet = wasmkeeper.NewTestFaucet(t, suite.ctx, suite.app.EwasmKeeper.BankKeeper(), twasmtypes.ModuleName, sdk.NewCoin(suite.denom, sdk.NewInt(100_000_000_000)))
+
+	suite.ethSigner = ethtypes.LatestSignerForChainID(s.app.EwasmKeeper.ChainID())
 }
 
 func SetupWithSingleValidatorGenTX(t *testing.T, genesisState app.GenesisState) {
@@ -208,6 +212,7 @@ func (suite *KeeperTestSuite) CommitAfter(t time.Duration) {
 }
 
 var DEFAULT_GAS_PRICE = "0.05utgd"
+var DEFAULT_GAS_PRICE_E = big.NewInt(50000)
 var DEFAULT_GAS_LIMIT = uint64(5_000_000)
 
 func (s *KeeperTestSuite) prepareCosmosTx(account simulation.Account, msgs []sdk.Msg, gasLimit *uint64, gasPrice *string) []byte {
@@ -303,20 +308,116 @@ func (s *KeeperTestSuite) GetRandomAccount() simulation.Account {
 	return account
 }
 
-// unAuthorizedDeliverTXFn applies the TX without ante handler checks for testing purpose
-func UnAuthorizedDeliverTXFn(t *testing.T, ctx sdk.Context, k poekeeper.PoEKeeper, contractKeeper wasmtypes.ContractOpsKeeper, txDecoder sdk.TxDecoder) func(tx abci.RequestDeliverTx) abci.ResponseDeliverTx {
-	t.Helper()
-	h := poe.NewHandler(k, contractKeeper, nil)
-	return func(tx abci.RequestDeliverTx) abci.ResponseDeliverTx {
-		genTx, err := txDecoder(tx.GetTx())
-		require.NoError(t, err)
-		msgs := genTx.GetMsgs()
-		require.Len(t, msgs, 1)
-		msg := msgs[0].(*types.MsgCreateValidator)
-		_, err = h(ctx, msg)
-		require.NoError(t, err)
-		return abci.ResponseDeliverTx{}
+func (s *KeeperTestSuite) buildEthTxSimple(
+	account simulation.Account,
+	to *common.Address,
+	data []byte,
+	gasLimit uint64,
+) *evmtypes.MsgEthereumTx {
+	return s.buildEthTx(account, to, data, gasLimit, DEFAULT_GAS_PRICE_E, nil, nil, nil)
+}
+
+func (s *KeeperTestSuite) buildEthTx(
+	account simulation.Account,
+	to *common.Address,
+	data []byte,
+	gasLimit uint64,
+	gasPrice *big.Int,
+	gasFeeCap *big.Int,
+	gasTipCap *big.Int,
+	accesses *ethtypes.AccessList,
+) *evmtypes.MsgEthereumTx {
+	chainID := s.app.EwasmKeeper.ChainID()
+	from := common.BytesToAddress(account.Address.Bytes())
+	nonce := s.getNonce(from.Bytes())
+	msgEthereumTx := evmtypes.NewTx(
+		chainID,
+		nonce,
+		to,
+		nil,
+		gasLimit,
+		gasPrice,
+		gasFeeCap,
+		gasTipCap,
+		data,
+		accesses,
+	)
+	msgEthereumTx.From = from.String()
+	fmt.Println("==EwasmSigVerificationDecorator111===sender", from.Hex(), from.String())
+	return msgEthereumTx
+}
+
+func (s *KeeperTestSuite) getNonce(addressBytes []byte) uint64 {
+	return s.app.EwasmKeeper.GetNonce(
+		s.ctx,
+		common.BytesToAddress(addressBytes),
+	)
+}
+
+func (s *KeeperTestSuite) signEthereumTx(account simulation.Account, msgEthereumTx *evmtypes.MsgEthereumTx) (*evmtypes.MsgEthereumTx, error) {
+	keyringSigner := tests.NewSigner(account.PrivKey)
+	err := msgEthereumTx.Sign(s.ethSigner, keyringSigner)
+	fmt.Println("==EwasmSigVerificationDecorator==signEthereumTx", msgEthereumTx.From, err)
+	if err != nil {
+		return nil, err
 	}
+
+	return msgEthereumTx, nil
+}
+
+func (s *KeeperTestSuite) prepareEthTx(account simulation.Account, msgEthereumTx *evmtypes.MsgEthereumTx) authsigning.Tx {
+	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
+	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
+	s.Require().NoError(err)
+
+	txBuilder := encodingConfig.TxConfig.NewTxBuilder()
+	builder, ok := txBuilder.(authtx.ExtensionOptionsTxBuilder)
+	s.Require().True(ok)
+	builder.SetExtensionOptions(option)
+
+	err = msgEthereumTx.Sign(s.ethSigner, tests.NewSigner(account.PrivKey))
+	s.Require().NoError(err)
+	fmt.Println("-testsuite prepareEthTx-msgEthereumTx.From", msgEthereumTx.From)
+	fmt.Println("-testsuite prepareEthTx-msgEthereumTx.To", msgEthereumTx.AsTransaction().To().Hex())
+
+	// msgEthereumTx.From = ""
+
+	err = txBuilder.SetMsgs(msgEthereumTx)
+	s.Require().NoError(err)
+
+	txData, err := evmtypes.UnpackTxData(msgEthereumTx.Data)
+	s.Require().NoError(err)
+
+	evmDenom := s.app.EwasmKeeper.GetParams(s.ctx).EvmDenom
+	fees := sdk.Coins{{Denom: evmDenom, Amount: sdk.NewIntFromBigInt(txData.Fee())}}
+	builder.SetFeeAmount(fees)
+	builder.SetGasLimit(msgEthereumTx.GetGas())
+	return builder.GetTx()
+}
+
+func (s *KeeperTestSuite) encodeEthTx(tx authsigning.Tx) []byte {
+	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
+
+	// bz are bytes to be broadcasted over the network
+	bz, err := encodingConfig.TxConfig.TxEncoder()(tx)
+	s.Require().NoError(err)
+	return bz
+}
+
+func (s *KeeperTestSuite) deliverEthTx(account simulation.Account, msgEthereumTx *evmtypes.MsgEthereumTx) abci.ResponseDeliverTx {
+	// bz := s.encodeEthTx(s.prepareEthTx(account, msgEthereumTx))
+	msgEthereumTx.From = account.PubKey.String()
+	bz := s.prepareCosmosTx(account, []sdk.Msg{msgEthereumTx}, nil, nil)
+	req := abci.RequestDeliverTx{Tx: bz}
+	res := s.app.BaseApp.DeliverTx(req)
+	return res
+}
+
+func (s *KeeperTestSuite) checkEthTx(account simulation.Account, msgEthereumTx *evmtypes.MsgEthereumTx) abci.ResponseCheckTx {
+	bz := s.encodeEthTx(s.prepareEthTx(account, msgEthereumTx))
+	req := abci.RequestCheckTx{Tx: bz}
+	res := s.app.BaseApp.CheckTx(req)
+	return res
 }
 
 type Attribute struct {

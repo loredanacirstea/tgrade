@@ -3,33 +3,25 @@ package tests
 import (
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"github.com/confio/tgrade/crypto/ethsecp256k1"
+	"github.com/cosmos/cosmos-sdk/types/simulation"
 )
 
-// NewAddrKey generates an Ethereum address and its corresponding private key.
-func NewAddrKey() (common.Address, cryptotypes.PrivKey) {
-	privkey, _ := ethsecp256k1.GenerateKey()
-	key, err := privkey.ToECDSA()
-	if err != nil {
-		return common.Address{}, nil
+func GenerateRandomAccount() simulation.Account {
+	pk := ed25519.GenPrivKey()
+	privKey := secp256k1.GenPrivKeyFromSecret(pk.GetKey().Seed())
+	pubKey := privKey.PubKey()
+	address := sdk.AccAddress(pubKey.Address())
+	account := simulation.Account{
+		PrivKey: privKey,
+		PubKey:  pubKey,
+		Address: address,
 	}
-
-	addr := crypto.PubkeyToAddress(key.PublicKey)
-
-	return addr, privkey
-}
-
-// GenerateAddress generates an Ethereum address.
-func GenerateAddress() common.Address {
-	addr, _ := NewAddrKey()
-	return addr
+	return account
 }
 
 var _ keyring.Signer = &Signer{}
@@ -47,10 +39,10 @@ func NewSigner(sk cryptotypes.PrivKey) keyring.Signer {
 
 // Sign signs the message using the underlying private key
 func (s Signer) Sign(_ string, msg []byte) ([]byte, cryptotypes.PubKey, error) {
-	if s.privKey.Type() != ethsecp256k1.KeyType {
+	if s.privKey.Type() != "secp256k1" {
 		return nil, nil, fmt.Errorf(
-			"invalid private key type for signing ethereum tx; expected %s, got %s",
-			ethsecp256k1.KeyType,
+			"invalid private key type for signing ewasm tx; expected %s, got %s",
+			"secp256k1",
 			s.privKey.Type(),
 		)
 	}
@@ -59,6 +51,7 @@ func (s Signer) Sign(_ string, msg []byte) ([]byte, cryptotypes.PubKey, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	sig = append(sig, byte(28))
 
 	return sig, s.privKey.PubKey(), nil
 }

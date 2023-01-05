@@ -648,6 +648,7 @@ func NewTgradeApp(
 			TXCounterStoreKey: keys[twasm.StoreKey],
 			GlobalFeeSubspace: app.getSubspace(globalfee.ModuleName),
 			ContractSource:    &app.poeKeeper,
+			EwasmKeeper:       app.EwasmKeeper,
 			// FeeMarketKeeper: app.FeeMarketKeeper,
 		},
 	)
