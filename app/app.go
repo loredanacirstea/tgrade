@@ -9,6 +9,7 @@ import (
 
 	"github.com/confio/tgrade/app/upgrades"
 	v2 "github.com/confio/tgrade/app/upgrades/v2"
+	v3 "github.com/confio/tgrade/app/upgrades/v3"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -21,6 +22,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/simapp"
+	store "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
@@ -57,7 +59,8 @@ import (
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	ica "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts"
-	icahost "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/host"
+
+	// icahost "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/host"
 	icahostkeeper "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/host/keeper"
 	icahosttypes "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/host/types"
 	icatypes "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/types"
@@ -148,13 +151,15 @@ var (
 
 	// module account permissions
 	maccPerms = map[string][]string{
-		ibctransfertypes.ModuleName: {authtypes.Minter, authtypes.Burner},
+		// TODO uncomment when reenabling IBC
+		// ibctransfertypes.ModuleName: {authtypes.Minter, authtypes.Burner},
+		ibctransfertypes.ModuleName: {},
 		icatypes.ModuleName:         nil,
 		twasm.ModuleName:            {authtypes.Minter, authtypes.Burner},
 		poetypes.BondedPoolName:     {authtypes.Burner, authtypes.Staking},
 	}
 
-	Upgrades = []upgrades.Upgrade{v2.Upgrade}
+	Upgrades = []upgrades.Upgrade{v2.Upgrade, v3.Upgrade}
 )
 
 var (
@@ -190,6 +195,7 @@ type TgradeApp struct {
 	authzKeeper      authzkeeper.Keeper
 	twasmKeeper      twasmkeeper.Keeper
 	poeKeeper        poekeeper.Keeper
+	stakingKeeper    poestakingadapter.StakingAdapter
 
 	scopedIBCKeeper      capabilitykeeper.ScopedKeeper
 	scopedICAHostKeeper  capabilitykeeper.ScopedKeeper
@@ -342,7 +348,8 @@ func NewTgradeApp(
 		scopedTransferKeeper,
 	)
 	transferModule := transfer.NewAppModule(app.transferKeeper)
-	transferIBCModule := transfer.NewIBCModule(app.transferKeeper)
+	// TODO uncomment when reenabling IBC
+	// transferIBCModule := transfer.NewIBCModule(app.transferKeeper)
 
 	app.icaHostKeeper = icahostkeeper.NewKeeper(
 		appCodec,
@@ -355,7 +362,8 @@ func NewTgradeApp(
 		app.MsgServiceRouter(),
 	)
 	icaModule := ica.NewAppModule(nil, &app.icaHostKeeper)
-	icaHostIBCModule := icahost.NewIBCModule(app.icaHostKeeper)
+	// TODO uncomment when reenabling IBC
+	// icaHostIBCModule := icahost.NewIBCModule(app.icaHostKeeper)
 
 	wasmDir := filepath.Join(homePath, "wasm")
 	twasmConfig, err := twasm.ReadWasmConfig(appOpts)
@@ -370,6 +378,7 @@ func NewTgradeApp(
 	wasmOpts = append(SetupWasmHandlers(appCodec, app.bankKeeper, govRouter, &app.twasmKeeper, &app.poeKeeper, app), wasmOpts...)
 
 	stakingAdapter := stakingKeeper
+	app.stakingKeeper = stakingKeeper
 	app.twasmKeeper = twasmkeeper.NewKeeper(
 		appCodec,
 		keys[twasm.StoreKey],
@@ -395,10 +404,11 @@ func NewTgradeApp(
 
 	// Create static IBC router, add app routes, then set and seal it
 	ibcRouter := porttypes.NewRouter()
-	ibcRouter.
-		AddRoute(wasm.ModuleName, wasm.NewIBCHandler(app.twasmKeeper, app.ibcKeeper.ChannelKeeper)).
-		AddRoute(ibctransfertypes.ModuleName, transferIBCModule).
-		AddRoute(icahosttypes.SubModuleName, icaHostIBCModule)
+	// TODO uncomment when reenabling IBC
+	// ibcRouter.
+	// 	AddRoute(wasm.ModuleName, wasm.NewIBCHandler(app.twasmKeeper, app.ibcKeeper.ChannelKeeper)).
+	// 	AddRoute(ibctransfertypes.ModuleName, transferIBCModule).
+	// 	AddRoute(icahosttypes.SubModuleName, icaHostIBCModule)
 	app.ibcKeeper.SetRouter(ibcRouter)
 
 	app.poeKeeper = poekeeper.NewKeeper(
@@ -716,8 +726,33 @@ func (app *TgradeApp) setupUpgradeHandlers() {
 			upgrade.CreateUpgradeHandler(
 				app.mm,
 				app.configurator,
+				app.accountKeeper,
+				&app.poeKeeper,
+				app.twasmKeeper,
 			),
 		)
+	}
+
+	// err := app.upgradeKeeper.DumpUpgradeInfoToDisk(11470249, v3.Upgrade.UpgradeName)
+	// if err != nil {
+	// 	panic(fmt.Errorf("failed to dump upgrade info to disk: %w", err))
+	// }
+
+	// When a planned update height is reached, the old binary will panic
+	// writing on disk the height and name of the update that triggered it
+	// This will read that value, and execute the preparations for the upgrade.
+	upgradeInfo, err := app.upgradeKeeper.ReadUpgradeInfoFromDisk()
+	fmt.Println("--ReadUpgradeInfoFromDisk--", err, upgradeInfo)
+	if err == nil {
+		if upgradeInfo.Name == v3.Upgrade.UpgradeName && !app.upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+			fmt.Println("--we are here--")
+			storeUpgrades := store.StoreUpgrades{
+				Added:   []string{},
+				Deleted: []string{},
+			}
+			// configure store loader that checks if version == upgradeHeight and applies store upgrades
+			app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+		}
 	}
 }
 

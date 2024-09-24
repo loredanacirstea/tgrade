@@ -5,10 +5,14 @@ import (
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	"github.com/cosmos/cosmos-sdk/codec"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
 	ibctransferkeeper "github.com/cosmos/ibc-go/v3/modules/apps/transfer/keeper"
 	ibckeeper "github.com/cosmos/ibc-go/v3/modules/core/keeper"
+
+	poekeeper "github.com/confio/tgrade/x/poe/keeper"
+	poetypes "github.com/confio/tgrade/x/poe/types"
 )
 
 type TestSupport struct {
@@ -26,6 +30,10 @@ func (s TestSupport) IBCKeeper() ibckeeper.Keeper {
 
 func (s TestSupport) WasmKeeper() wasm.Keeper {
 	return s.app.twasmKeeper.Keeper
+}
+
+func (s TestSupport) TwasmKeeper() poetypes.TWasmKeeper {
+	return s.app.twasmKeeper
 }
 
 func (s TestSupport) AppCodec() codec.Codec {
@@ -50,4 +58,12 @@ func (s TestSupport) BankKeeper() bankkeeper.Keeper {
 
 func (s TestSupport) TransferKeeper() ibctransferkeeper.Keeper {
 	return s.app.transferKeeper
+}
+
+func (s TestSupport) AccountKeeper() authkeeper.AccountKeeper {
+	return s.app.accountKeeper
+}
+
+func (s TestSupport) PoeKeeper() *poekeeper.Keeper {
+	return &s.app.poeKeeper
 }

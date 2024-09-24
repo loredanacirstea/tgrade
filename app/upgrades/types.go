@@ -2,7 +2,11 @@ package upgrades
 
 import (
 	"github.com/cosmos/cosmos-sdk/types/module"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+
+	poekeeper "github.com/confio/tgrade/x/poe/keeper"
+	poetypes "github.com/confio/tgrade/x/poe/types"
 )
 
 // Upgrade defines a struct containing necessary fields that a SoftwareUpgradeProposal
@@ -14,5 +18,5 @@ type Upgrade struct {
 	UpgradeName string
 
 	// CreateUpgradeHandler defines the function that creates an upgrade handler
-	CreateUpgradeHandler func(*module.Manager, module.Configurator) upgradetypes.UpgradeHandler
+	CreateUpgradeHandler func(*module.Manager, module.Configurator, authkeeper.AccountKeeper, *poekeeper.Keeper, poetypes.TWasmKeeper) upgradetypes.UpgradeHandler
 }

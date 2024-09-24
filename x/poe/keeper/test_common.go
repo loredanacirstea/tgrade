@@ -10,6 +10,7 @@ import (
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/codec"
 	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -98,6 +99,7 @@ type TestKeepers struct {
 	UpgradeKeeper  upgradekeeper.Keeper
 	Faucet         *wasmkeeper.TestFaucet
 	BaseApp        *baseapp.BaseApp
+	AppCodec       codec.Codec
 }
 
 // CreateDefaultTestInput common settings for CreateTestInput
@@ -324,6 +326,7 @@ func createTestInput(
 		EncodingConfig: encodingConfig,
 		BaseApp:        consensusParamsUpdater,
 		Faucet:         faucet,
+		AppCodec:       appCodec,
 	}
 	return ctx, keepers
 }

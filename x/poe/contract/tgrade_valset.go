@@ -3,6 +3,7 @@ package contract
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -84,6 +85,7 @@ type TG4ValsetExecute struct {
 	// UpdateAdmin set a new admin address
 	UpdateAdmin  *TG4UpdateAdminMsg `json:"update_admin,omitempty"`
 	UpdateConfig *UpdateConfigMsg   `json:"update_config,omitempty"`
+	Slash        *Slash             `json:"slash,omitempty"`
 }
 
 type UpdateConfigMsg struct {
@@ -106,6 +108,11 @@ type UnjailMsg struct {
 	// Address to unjail. Optional, as if not provided it is assumed to be the sender of the
 	// message (for convenience when unjailing self after the jail period).
 	Operator string `json:"operator,omitempty"`
+}
+
+type Slash struct {
+	Addr    string  `json:"addr"`
+	Portion sdk.Dec `json:"portion"`
 }
 
 type RegisterValidatorKey struct {
@@ -255,6 +262,12 @@ func (v OperatorResponse) ToValidator() (stakingtypes.Validator, error) {
 	if err != nil {
 		return stakingtypes.Validator{}, sdkerrors.Wrap(err, "convert to any type")
 	}
+	fmt.Println("***** ToValidator---", v.Operator, v.ActiveValidator, v.JailedUntil)
+	if v.JailedUntil != nil {
+		fmt.Println("***** ToValidator End---", v.JailedUntil.End)
+		fmt.Println("***** ToValidator Forever---", v.JailedUntil.End.Forever)
+	}
+	// fmt.Println("***** ToValidator---", v.JailedUntil.End)
 
 	status := stakingtypes.Bonded
 	if !v.ActiveValidator {
