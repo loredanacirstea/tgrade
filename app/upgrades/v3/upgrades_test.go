@@ -43,7 +43,7 @@ func TestCreateUpgradeHandler(t *testing.T) {
 		require.NotNil(t, ak.GetAccount(ctx, acc.GetAddress()))
 	}
 	// when
-	handler := v3.CreateUpgradeHandler(&module.Manager{}, module.NewConfigurator(nil, nil, nil), ak)
+	handler := v3.CreateUpgradeHandler(&module.Manager{}, module.NewConfigurator(nil, nil, nil), ak, h.PoeKeeper(), h.TwasmKeeper())
 	_, err := handler(ctx, upgradetypes.Plan{}, module.VersionMap{})
 	// then
 	require.NoError(t, err)

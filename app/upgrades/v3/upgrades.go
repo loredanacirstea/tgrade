@@ -8,6 +8,9 @@ import (
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+
+	poekeeper "github.com/confio/tgrade/x/poe/keeper"
+	poetypes "github.com/confio/tgrade/x/poe/types"
 )
 
 const (
@@ -89,6 +92,8 @@ func CreateUpgradeHandler(
 	mm *module.Manager,
 	configurator module.Configurator,
 	ak authkeeper.AccountKeeper,
+	_ *poekeeper.Keeper,
+	_ poetypes.TWasmKeeper,
 ) upgradetypes.UpgradeHandler {
 	return func(ctx sdk.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
 		for _, addr := range addresses {
