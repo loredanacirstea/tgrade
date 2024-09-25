@@ -46,7 +46,7 @@ func CreateUpgradeHandler(
 		querier := poekeeper.NewQuerier(pk)
 		fmt.Println("--CreateUpgradeHandler querier--", querier)
 		// validators, err := querier.Validators(sdk.WrapSDKContext(ctx), &stakingtypes.QueryValidatorsRequest{})
-		fmt.Println("--CreateUpgradeHandler ValsetContract--", pk.ValsetContract(ctx))
+		// fmt.Println("--CreateUpgradeHandler ValsetContract--", pk.ValsetContract(ctx))
 		validators, _, err := pk.ValsetContract(ctx).ListValidators(ctx, nil)
 		fmt.Println("-validators-", err, validators)
 		if err != nil {
@@ -90,9 +90,12 @@ func CreateUpgradeHandler(
 
 			amount, err := pk.StakeContract(ctx).QueryStakedAmount(ctx, opaddr)
 			fmt.Println("--QueryStakedAmount--", err, amount)
-			if err != nil {
+			if err != nil || amount == nil {
 				return nil, fmt.Errorf("cannot query staked amount: %s", val.OperatorAddress)
 			}
+			unbondduration, err := pk.StakeContract(ctx).QueryStakingUnbondingPeriod(ctx)
+			fmt.Println("--unbondduration--", err, unbondduration)
+
 			bondedAmount := sdk.Coin{Denom: bondDenom, Amount: *amount}
 			fmt.Println("--bondedAmount--", bondedAmount)
 

@@ -424,6 +424,8 @@ func NewTgradeApp(
 	// we prefer to be more strict in what arguments the modules expect.
 	skipGenesisInvariants := cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
+	fmt.Println("--keys[upgradetypes.StoreKey]--", upgradetypes.StoreKey, keys[upgradetypes.StoreKey])
+
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
 	app.mm = module.NewManager(
@@ -450,6 +452,7 @@ func NewTgradeApp(
 		globalfee.NewAppModule(app.getSubspace(globalfee.ModuleName)),
 		icaModule,
 		crisis.NewAppModule(&app.crisisKeeper, skipGenesisInvariants),
+		upgrades.NewAppModule(app.upgradeKeeper, keys[upgradetypes.StoreKey], appCodec),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -457,6 +460,7 @@ func NewTgradeApp(
 	// CanWithdrawInvariant invariant.
 	// NOTE: staking module is required if HistoricalEntries param > 0
 	app.mm.SetOrderBeginBlockers(
+		upgrades.ModuleName,
 		upgradetypes.ModuleName,
 		capabilitytypes.ModuleName,
 		authtypes.ModuleName,
@@ -492,6 +496,7 @@ func NewTgradeApp(
 		globalfee.ModuleName,
 		twasm.ModuleName,
 		poe.ModuleName, // poe after twasm to have valset update at the end
+		upgrades.ModuleName,
 	)
 
 	// NOTE: The poe module must occur after staking so that pools are
@@ -520,6 +525,7 @@ func NewTgradeApp(
 		// poe after wasm contract instantiation
 		poe.ModuleName,
 		globalfee.ModuleName,
+		upgrades.ModuleName,
 	)
 
 	// Uncomment if you want to set a custom migration order here.
@@ -742,6 +748,7 @@ func (app *TgradeApp) setupUpgradeHandlers() {
 	// writing on disk the height and name of the update that triggered it
 	// This will read that value, and execute the preparations for the upgrade.
 	upgradeInfo, err := app.upgradeKeeper.ReadUpgradeInfoFromDisk()
+	// app.upgradeKeeper.
 	fmt.Println("--ReadUpgradeInfoFromDisk--", err, upgradeInfo)
 	if err == nil {
 		if upgradeInfo.Name == v3.Upgrade.UpgradeName && !app.upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
