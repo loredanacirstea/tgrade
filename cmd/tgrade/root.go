@@ -116,6 +116,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig appparams.EncodingConfig
 		testnetCmd(app.ModuleBasics, banktypes.GenesisBalancesIterator{}),
 		debug.Cmd(),
 		config.Cmd(),
+		MigrateGenesisWithValidatorSet(app.DefaultNodeHome, encodingConfig),
 	)
 
 	ac := appCreator{

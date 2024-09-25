@@ -210,7 +210,13 @@ func InitTestnet(
 
 		nodeConfig.Moniker = nodeDirName
 
-		ip, err := getIP(i, startingIPAddress)
+		var ip string
+		var err error
+		if singleMachine {
+			ip, err = getIP(0, startingIPAddress)
+		} else {
+			ip, err = getIP(i, startingIPAddress)
+		}
 		if err != nil {
 			_ = os.RemoveAll(outputDir)
 			return err
