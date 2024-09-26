@@ -39,7 +39,9 @@ func BeginBlocker(ctx sdk.Context, uk upgradekeeper.Keeper, upgradeStoreKey sdk.
 		store := ctx.KVStore(upgradeStoreKey)
 		// check if upgrade was applied already and skip
 		height := uk.GetDoneHeight(ctx, upgradeInfo.Name)
+		fmt.Println("--upgrade GetDoneHeight--", upgradeInfo.Name, height)
 		if height != 0 {
+			panic("upgrade DONE")
 			return
 		}
 		plan := &upgradetypes.Plan{

@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -18,7 +22,7 @@ import (
 
 	// stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	// authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	// sdk "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	// authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
@@ -27,11 +31,78 @@ import (
 	// wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 
 	appparams "github.com/confio/tgrade/app/params"
-	// "github.com/confio/tgrade/x/poe/contract"
+	"github.com/confio/tgrade/x/poe/contract"
+
 	// poekeeper "github.com/confio/tgrade/x/poe/keeper"
 	poetypes "github.com/confio/tgrade/x/poe/types"
 	twasmtypes "github.com/confio/tgrade/x/twasm/types"
 )
+
+type DistributionContract struct {
+	Address string `json:"contract"`
+	// Ratio of total reward tokens for an epoch to be sent to that contract for further distribution.
+	// Range 0 - 1
+	Ratio string `json:"ratio"`
+}
+
+type ValSetConfig struct {
+	AutoUnjail            bool                   `json:"auto_unjail"`
+	DistributionContracts []DistributionContract `json:"distribution_contracts"`
+	DoubleSignSlashRatio  string                 `json:"double_sign_slash_ratio"`
+	EpochReward           sdk.Coin               `json:"epoch_reward"`
+	FeePercentage         string                 `json:"fee_percentage"`
+	MaxValidators         uint32                 `json:"max_validators"`
+	Membership            string                 `json:"membership"`
+	MinPoints             uint64                 `json:"min_points"`
+	OfflineJailDuration   uint64                 `json:"offline_jail_duration"`
+	Scaling               uint32                 `json:"scaling"`
+	ValidatorGroup        string                 `json:"validator_group"`
+	VerifyValidators      bool                   `json:"verify_validators"`
+}
+
+type ValSetContractVersion struct {
+	Contract string `json:"contract"`
+	Version  string `json:"version"`
+}
+
+type ValSetValidatorsStartHeight struct {
+	Height    uint64 `json:"height"`
+	Validator string `json:"validator"`
+}
+
+type Operator struct {
+	Operator        string                     `json:"operator"`
+	Pubkey          contract.ValidatorPubkey   `json:"pubkey"`
+	Metadata        contract.ValidatorMetadata `json:"metadata"`
+	JailedUntil     *JailingPeriod             `json:"jailed_until,omitempty"`
+	ActiveValidator bool                       `json:"active_validator"`
+}
+
+type JailingEnd struct {
+	Forever struct{} `json:"forever,omitempty"`
+	Until   string   `json:"until,omitempty"`
+}
+
+type JailingPeriod struct {
+	Start string     `json:"start,omitempty"`
+	End   JailingEnd `json:"end,omitempty"`
+}
+
+type ListValidatorSlashingResponse struct {
+	Validator string                       `json:"validator"`
+	Slashing  []contract.ValidatorSlashing `json:"slashing"`
+}
+
+type ValSetMsg struct {
+	Admin                 string                          `json:"admin"`
+	Config                ValSetConfig                    `json:"config"`
+	ContractVersion       ValSetContractVersion           `json:"contract_version"`
+	Epoch                 contract.ValsetEpochResponse    `json:"epoch"`
+	Operators             []Operator                      `json:"operators"`
+	Validators            []contract.ValidatorInfo        `json:"validators"`
+	ValidatorsSlashing    []ListValidatorSlashingResponse `json:"validators_slashing"`
+	ValidatorsStartHeight []ValSetValidatorsStartHeight   `json:"validators_start_height"`
+}
 
 // MigrateGenesisWithValidatorSet returns cobra Command.
 func MigrateGenesisWithValidatorSet(defaultNodeHome string, encodingConfig appparams.EncodingConfig) *cobra.Command {
@@ -102,7 +173,8 @@ func MigrateGenesisWithValidatorSet(defaultNodeHome string, encodingConfig apppa
 	return cmd
 }
 
-func MigrateValidatorState(clientCtx client.Context, appState map[string]json.RawMessage, genDoc *tmtypes.GenesisDoc, hfversion int32, validators map[string]bool) (map[string]json.RawMessage, *tmtypes.GenesisDoc, error) {
+// migrating validators follows logic from end_block per epoch recalculations https://github.com/confio/poe-contracts/blob/b7a8dbafd89cd70401dced518366f520b7089ff6/contracts/tgrade-valset/src/contract.rs#L709
+func MigrateValidatorState(clientCtx client.Context, appState map[string]json.RawMessage, genDoc *tmtypes.GenesisDoc, hfversion int32, renewvalidators map[string]bool) (map[string]json.RawMessage, *tmtypes.GenesisDoc, error) {
 	cdc := clientCtx.Codec
 	fmt.Println("---genesis.ChainID--", genDoc.ChainID)
 
@@ -111,41 +183,222 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 
 	poegenesis := poetypes.GetGenesisStateFromAppState(cdc, appState)
 
-	// fmt.Println("---poegenesis--", poegenesis)
+	fmt.Println("---poegenesis--", poegenesis)
+
+	contracts := poegenesis.GetImportDump()
+	valSet := ""
+	staking := ""
+	for _, c := range contracts.Contracts {
+		if c.ContractType == poetypes.PoEContractTypeValset {
+			valSet = c.GetAddress()
+		}
+		if c.ContractType == poetypes.PoEContractTypeStaking {
+			staking = c.GetAddress()
+		}
+	}
 
 	var twasmGenesisState twasmtypes.GenesisState
 	cdc.MustUnmarshalJSON(appState[twasmtypes.ModuleName], &twasmGenesisState)
 
 	// get all contract addresses from poecontract
+	genesisValidators := make([]tmtypes.GenesisValidator, 0)
 
-	for _, contract := range twasmGenesisState.Contracts {
-		if contract.ContractInfo.Extension == nil {
+	for wcindex, wcontract := range twasmGenesisState.Contracts {
+		if wcontract.ContractInfo.Extension == nil {
 			continue
 		}
-		var ext twasmtypes.TgradeContractDetails
-		err := cdc.UnpackAny(contract.ContractInfo.Extension, &ext)
-		if err != nil {
-			continue
-		}
-		if ext.HasRegisteredPrivilege(twasmtypes.PrivilegeTypeValidatorSetUpdate) {
-			cmod := contract.GetCustomModel()
-			if cmod != nil {
-				fmt.Println("-PrivilegeTypeValidatorSetUpdate Msg-", string(cmod.Msg))
+		// var ext twasmtypes.TgradeContractDetails
+		// err := cdc.UnpackAny(contract.ContractInfo.Extension, &ext)
+		// if err != nil {
+		// 	continue
+		// }
+		// if ext.HasRegisteredPrivilege(twasmtypes.PrivilegeTypeValidatorSetUpdate) {
+		if wcontract.ContractAddress == valSet {
+			cmod := wcontract.GetCustomModel()
+			if cmod == nil {
+				return appState, genDoc, fmt.Errorf("ValSet contract does not have custom model")
 			}
-			// kvmodel := contract.GetKvModel()
+			fmt.Println("-PrivilegeTypeValidatorSetUpdate Msg-", string(cmod.Msg))
+			// ValSetMsg
+			// kvmodel := wcontract.GetKvModel()
 			// if kvmodel != nil {
 			// }
+			var initMsg ValSetMsg
+			err := json.Unmarshal(cmod.Msg, &initMsg)
+			if err != nil {
+				return appState, genDoc, err
+			}
+			fmt.Println("-PrivilegeTypeValidatorSetUpdate initMsg-", initMsg)
+			// TODO how to recalculate power?
+
+			for i, op := range initMsg.Operators {
+				fmt.Println("--Operators--", op.Operator, renewvalidators[op.Operator])
+				if ok := renewvalidators[op.Operator]; !ok {
+					initMsg.Operators[i].ActiveValidator = false
+					initMsg.Operators[i].JailedUntil = &JailingPeriod{
+						// Start: time.Now(),
+						Start: strconv.Itoa(int(time.Now().Unix() * 1000000)),
+						End:   JailingEnd{Forever: struct{}{}},
+					}
+				}
+			}
+			newValidators := make([]contract.ValidatorInfo, 0)
+			removedPow := uint64(0)
+			for _, val := range initMsg.Validators {
+				if ok := renewvalidators[val.Operator]; !ok {
+					removedPow = removedPow + val.Power
+					// TODO does this mean its slashed, or do I have to modify more storage?
+					slashingInfo := contract.ValidatorSlashing{Height: uint64(genDoc.InitialHeight), Portion: sdk.OneDec()}
+					found := false
+					for is, slashval := range initMsg.ValidatorsSlashing {
+						if slashval.Validator == val.Operator {
+							found = true
+							initMsg.ValidatorsSlashing[is].Slashing = append(initMsg.ValidatorsSlashing[is].Slashing, slashingInfo)
+						}
+					}
+					if !found {
+						slashing := ListValidatorSlashingResponse{
+							Validator: val.Operator,
+							Slashing:  []contract.ValidatorSlashing{slashingInfo},
+						}
+						initMsg.ValidatorsSlashing = append(initMsg.ValidatorsSlashing, slashing)
+					}
+				}
+			}
+			for _, val := range initMsg.Validators {
+				fmt.Println("--Validators--", val.Operator, renewvalidators[val.Operator])
+				// if ok := renewvalidators[val.Operator]; !ok {
+				// 	initMsg.Validators[i].Power = 0 // TODO recalculate for everyone??
+				// }
+				if ok := renewvalidators[val.Operator]; ok {
+					// TODO recalculate power
+					// val.Power = uint64(initMsg.Config.Scaling) *
+					// power: m.points * scaling,
+					// poetypes.PoEContractTypeMixer
+					val.Power = val.Power + removedPow // TODO fixme
+					newValidators = append(newValidators, val)
+					for _, genv := range genDoc.Validators {
+						if bytes.Equal(genv.PubKey.Bytes(), val.ValidatorPubkey.Ed25519) {
+							genv.Power = int64(val.Power)
+							genesisValidators = append(genesisValidators, genv)
+						}
+					}
+				}
+			}
+			initMsg.Validators = newValidators
+
+			initMsgBz, err := json.Marshal(&initMsg)
+			if err != nil {
+				return appState, genDoc, err
+			}
+			cmod.Msg = initMsgBz
+			// wcontract.SetCustomModel(initMsgBz);
+			fmt.Println("-PrivilegeTypeValidatorSetUpdate new ValSet initmsg-", string(cmod.Msg))
 		}
-		// if ext.HasRegisteredPrivilege(twasmtypes.Sta) {
-		// }
+		if wcontract.ContractAddress == staking {
+			// TODO
+			fmt.Println("--hello staking--", wcontract)
+			fmt.Println("--hello staking--", wcontract.ContractInfo.Label, wcontract.ContractInfo.Extension)
+			fmt.Println("--hello ContractState--", wcontract.ContractInfo.Label, wcontract.ContractState)
+
+			kvmodel := wcontract.GetKvModel()
+			if kvmodel == nil {
+				return appState, genDoc, fmt.Errorf("staking contract does not have kvmodel model")
+			}
+
+			unstaked := int64(0)
+			unstakedPoints := int64(0)
+			for modndx, mod := range kvmodel.Models {
+				fmt.Println("---mod START--")
+				fmt.Println("---staking mod key--", mod.Key, " ", string(mod.Key.Bytes()))
+				fmt.Println("---staking mod value--", string(mod.Value), hex.EncodeToString(mod.Value))
+				key := mod.Key.String()
+				// "stake"
+				if strings.HasPrefix(key, "00057374616B65") {
+					addr := hexToBech32(strings.TrimPrefix(key, "00057374616B65"))
+					value_ := strings.Trim(string(mod.Value), `"`)
+					value, err := strconv.ParseInt(value_, 10, 64)
+					if err != nil {
+						return appState, genDoc, fmt.Errorf("staking contract: cannot parse stake value: %s", string(mod.Value))
+					}
+					unstaked += value
+					if ok := renewvalidators[addr]; !ok {
+						kvmodel.Models[modndx].Value = []byte(`"0"`)
+					}
+				}
+				// "members"
+				if strings.HasPrefix(key, "00076D656D62657273") {
+					addr := hexToBech32(strings.TrimPrefix(key, "00076D656D62657273"))
+					// {"points":700,"start_height":null}
+					var points contract.TG4MemberResponse
+					err := json.Unmarshal(mod.Value, &points)
+					if err != nil {
+						return appState, genDoc, fmt.Errorf("staking contract: cannot parse members value: %x", mod.Value)
+					}
+					if points.Points != nil {
+						unstakedPoints += int64(*points.Points)
+					}
+					if ok := renewvalidators[addr]; !ok {
+						kvmodel.Models[modndx].Value = []byte(`{"points":0,"start_height":null}`)
+					}
+				}
+				// vesting_stake
+				if strings.HasPrefix(key, "000D76657374696E675F7374616B65") {
+					addr := hexToBech32(strings.TrimPrefix(key, "000D76657374696E675F7374616B65"))
+					value_ := strings.Trim(string(mod.Value), `"`)
+					value, err := strconv.ParseInt(value_, 10, 64)
+					if err != nil {
+						return appState, genDoc, fmt.Errorf("staking contract: cannot parse vesting stake value: %s", string(mod.Value))
+					}
+					unstaked += value
+					if ok := renewvalidators[addr]; !ok {
+						kvmodel.Models[modndx].Value = []byte(`"0"`)
+					}
+				}
+				// members__point
+				if strings.HasPrefix(key, "000F6D656D626572735F5F706F696E7473000800000000000002BC") {
+					addr := hexToBech32(strings.TrimPrefix(key, "000F6D656D626572735F5F706F696E7473000800000000000002BC"))
+					if ok := renewvalidators[addr]; !ok {
+						kvmodel.Models[modndx].Value = []byte(`0`)
+					}
+				}
+				// if strings.HasPrefix(key, "members__changelog-") {
+
+				// }
+				fmt.Println("---mod END--")
+			}
+			// update total staked
+			// "total"
+			for modndx, mod := range kvmodel.Models {
+				if mod.Key.String() == "746F74616C" {
+					value, err := strconv.ParseInt(string(mod.Value), 10, 64)
+					if err != nil {
+						return appState, genDoc, fmt.Errorf("staking contract: cannot parse value: %s", string(mod.Value))
+					}
+					value = value - unstakedPoints
+					kvmodel.Models[modndx].Value = []byte(strconv.Itoa(int(value)))
+				}
+			}
+		}
+
+		twasmGenesisState.Contracts[wcindex] = wcontract
+
+		bzz, err := wcontract.Marshal()
+		fmt.Println("--wcontract--", err, string(bzz))
 	}
 
 	validatorsToRemove := map[string]bool{}
 
 	fmt.Println("--validatorsToRemove--", validatorsToRemove)
 
-	// TODO genDoc.Validators
+	genDoc.Validators = genesisValidators
+
+	// TODO either slashing or subtract stake?
+	// TODO distribution fixes
+
 	// burn stake for validatorsToRemove
+	// TODO burn from supply?
+	// TODO remove engagement from eliminated validators
 
 	// TODO vesting accounts?
 	// staked amount? who owns it?
@@ -168,8 +421,19 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 	// burn other validator account TGD
 
 	poetypes.SetGenesisStateInAppState(cdc, appState, poegenesis)
+	appState[twasmtypes.ModuleName] = cdc.MustMarshalJSON(&twasmGenesisState)
+
+	// fmt.Println("--NEW TWASM GENESIS STATE--", string(appState[twasmtypes.ModuleName]))
 
 	return appState, genDoc, nil
+}
+
+func hexToBech32(value string) string {
+	bz, err := hex.DecodeString(value)
+	if err != nil {
+		panic(fmt.Sprintf(`cannot convert hex to bech32: %s`, value))
+	}
+	return string(bz)
 }
 
 // func CreateUpgradeHandler(

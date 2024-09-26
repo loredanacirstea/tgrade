@@ -16,7 +16,7 @@ import (
 )
 
 var addresses = []string{
-	"tgrade1s0lankh33kprer2l22nank5rvsuh9ksa4nr6gl",
+	"tgrade17v37nx505sdc97yxlemryj4djryr6h45rahyzl",
 }
 
 func WhitelistedValidators() map[string]bool {

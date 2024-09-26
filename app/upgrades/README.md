@@ -6,7 +6,7 @@ This can be used for upgrades that cannot be scheduled by governance and are dif
 
 * create ./tgrade/data/upgrade-info.json
 ```
-{"name":"v4","height":11470249}
+{"name":"v3","height":11470249}
 ```
 
 * (optional) reset ALL the validators private state (danger!)

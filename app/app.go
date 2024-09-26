@@ -460,7 +460,7 @@ func NewTgradeApp(
 	// CanWithdrawInvariant invariant.
 	// NOTE: staking module is required if HistoricalEntries param > 0
 	app.mm.SetOrderBeginBlockers(
-		upgrades.ModuleName,
+		upgrades.ModuleName, // before upgradetypes
 		upgradetypes.ModuleName,
 		capabilitytypes.ModuleName,
 		authtypes.ModuleName,
@@ -495,8 +495,8 @@ func NewTgradeApp(
 		icatypes.ModuleName,
 		globalfee.ModuleName,
 		twasm.ModuleName,
-		poe.ModuleName, // poe after twasm to have valset update at the end
-		upgrades.ModuleName,
+		poe.ModuleName,      // poe after twasm to have valset update at the end
+		upgrades.ModuleName, // last
 	)
 
 	// NOTE: The poe module must occur after staking so that pools are
