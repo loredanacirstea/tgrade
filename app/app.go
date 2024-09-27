@@ -57,7 +57,8 @@ import (
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	ica "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts"
-	icahost "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/host"
+
+	// icahost "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/host"
 	icahostkeeper "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/host/keeper"
 	icahosttypes "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/host/types"
 	icatypes "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/types"
@@ -148,7 +149,9 @@ var (
 
 	// module account permissions
 	maccPerms = map[string][]string{
-		ibctransfertypes.ModuleName: {authtypes.Minter, authtypes.Burner},
+		// TODO uncomment when reenabling IBC
+		// ibctransfertypes.ModuleName: {authtypes.Minter, authtypes.Burner},
+		ibctransfertypes.ModuleName: {},
 		icatypes.ModuleName:         nil,
 		twasm.ModuleName:            {authtypes.Minter, authtypes.Burner},
 		poetypes.BondedPoolName:     {authtypes.Burner, authtypes.Staking},
@@ -342,7 +345,8 @@ func NewTgradeApp(
 		scopedTransferKeeper,
 	)
 	transferModule := transfer.NewAppModule(app.transferKeeper)
-	transferIBCModule := transfer.NewIBCModule(app.transferKeeper)
+	// TODO uncomment when reenabling IBC
+	// transferIBCModule := transfer.NewIBCModule(app.transferKeeper)
 
 	app.icaHostKeeper = icahostkeeper.NewKeeper(
 		appCodec,
@@ -355,7 +359,8 @@ func NewTgradeApp(
 		app.MsgServiceRouter(),
 	)
 	icaModule := ica.NewAppModule(nil, &app.icaHostKeeper)
-	icaHostIBCModule := icahost.NewIBCModule(app.icaHostKeeper)
+	// TODO uncomment when reenabling IBC
+	// icaHostIBCModule := icahost.NewIBCModule(app.icaHostKeeper)
 
 	wasmDir := filepath.Join(homePath, "wasm")
 	twasmConfig, err := twasm.ReadWasmConfig(appOpts)
@@ -395,10 +400,11 @@ func NewTgradeApp(
 
 	// Create static IBC router, add app routes, then set and seal it
 	ibcRouter := porttypes.NewRouter()
-	ibcRouter.
-		AddRoute(wasm.ModuleName, wasm.NewIBCHandler(app.twasmKeeper, app.ibcKeeper.ChannelKeeper)).
-		AddRoute(ibctransfertypes.ModuleName, transferIBCModule).
-		AddRoute(icahosttypes.SubModuleName, icaHostIBCModule)
+	// TODO uncomment when reenabling IBC
+	// ibcRouter.
+	// 	AddRoute(wasm.ModuleName, wasm.NewIBCHandler(app.twasmKeeper, app.ibcKeeper.ChannelKeeper)).
+	// 	AddRoute(ibctransfertypes.ModuleName, transferIBCModule).
+	// 	AddRoute(icahosttypes.SubModuleName, icaHostIBCModule)
 	app.ibcKeeper.SetRouter(ibcRouter)
 
 	app.poeKeeper = poekeeper.NewKeeper(
