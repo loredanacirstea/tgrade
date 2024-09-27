@@ -506,7 +506,15 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 						}
 					}
 				}
-				// TODO members__points ?
+				// members__points
+				// 54 bytes + address
+				// e.g. 000F6D656D626572735F5F706F696E747300080000000000000001746772616465313871326C65323533666C3664396A6A75713071703777393570667177666B7339616379637332
+				if strings.HasPrefix(key, "000F6D656D626572735F5F706F696E7473") {
+					addr := hexToBech32(key[54:])
+					if ok := renewoversightmembers[addr]; !ok {
+						kvmodel.Models[modndx].Value = []byte(`0`)
+					}
+				}
 				// TODO members__changelog ?
 				// TODO withdraw_adjustment ?
 				// TODO members__points_tie_break ??
@@ -558,6 +566,15 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 						if points.Points != nil {
 							pointsRemoved += int64(*points.Points)
 						}
+					}
+				}
+				// members__points
+				// 54 bytes + address
+				// e.g. 000F6D656D626572735F5F706F696E747300080000000000000001746772616465313871326C65323533666C3664396A6A75713071703777393570667177666B7339616379637332
+				if strings.HasPrefix(key, "000F6D656D626572735F5F706F696E7473") {
+					addr := hexToBech32(key[54:])
+					if ok := renewoversightmembers[addr]; !ok {
+						kvmodel.Models[modndx].Value = []byte(`0`)
 					}
 				}
 			}
