@@ -23,6 +23,8 @@ import (
 
 	tmtypes "github.com/tendermint/tendermint/types"
 
+	cosmwasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+
 	appparams "github.com/confio/tgrade/app/params"
 	"github.com/confio/tgrade/x/poe/contract"
 	poetypes "github.com/confio/tgrade/x/poe/types"
@@ -104,6 +106,46 @@ type StakingConfig struct {
 	AutoReturnLimit *uint64 `json:"auto_return_limit,omitempty"`
 }
 
+type Validators struct {
+	Validators []string `json:"validators"`
+	Oversight  []string `json:"oversight"`
+}
+
+type TrustedCircleRules struct {
+	VotingPeriod  uint32  `json:"voting_period"`
+	Quorum        sdk.Dec `json:"quorum"`
+	Threshold     sdk.Dec `json:"threshold"`
+	AllowEndEarly bool    `json:"allow_end_early"`
+}
+
+type TrustedCircleConfig struct {
+	Name                      string             `json:"name"`
+	Denom                     string             `json:"denom"`
+	EscrowAmount              sdk.Int            `json:"escrow_amount"`
+	EscrowPending             *sdk.Int           `json:"escrow_pending"`
+	Rules                     TrustedCircleRules `json:"rules"`
+	DenyList                  string             `json:"deny_list,omitempty"`
+	EditTrustedCircleDisabled bool               `json:"edit_trusted_circle_disabled"` // disable or not
+}
+
+// enum MemberStatus {
+//     /// Normal member, not allowed to vote
+//     NonVoting {},
+//     /// Approved for voting, need to pay in
+//     Pending { proposal_id: u64 },
+//     /// Approved for voting, and paid in. Waiting for rest of batch
+//     PendingPaid { proposal_id: u64 },
+//     /// Full-fledged voting member
+//     Voting {},
+//     /// Marked as leaving. Escrow frozen until `claim_at`
+//     Leaving { claim_at: u64 },
+// }
+
+type EscrowStatus struct {
+	Paid   sdk.Int  `json:"paid"`
+	Status struct{} `json:"status"`
+}
+
 // MigrateGenesisWithValidatorSet returns cobra Command.
 func MigrateGenesisWithValidatorSet(defaultNodeHome string, encodingConfig appparams.EncodingConfig) *cobra.Command {
 	cmd := &cobra.Command{
@@ -131,7 +173,7 @@ func MigrateGenesisWithValidatorSet(defaultNodeHome string, encodingConfig apppa
 				fmt.Println("Error reading validator file:", err)
 				os.Exit(1)
 			}
-			var validators []string
+			var validators Validators
 			err = json.Unmarshal(file, &validators)
 			if err != nil {
 				fmt.Println("Error unmarshaling validators:", err)
@@ -144,11 +186,15 @@ func MigrateGenesisWithValidatorSet(defaultNodeHome string, encodingConfig apppa
 			}
 
 			validatorMap := make(map[string]bool)
-			for _, item := range validators {
+			for _, item := range validators.Validators {
 				validatorMap[item] = true
 			}
+			oversightMap := make(map[string]bool)
+			for _, item := range validators.Oversight {
+				oversightMap[item] = true
+			}
 
-			appState, genDoc, err = MigrateValidatorState(clientCtx, appState, genDoc, int32(hfindex), validatorMap)
+			appState, genDoc, err = MigrateValidatorState(clientCtx, appState, genDoc, int32(hfindex), validatorMap, oversightMap)
 			if err != nil {
 				return fmt.Errorf("migration failed: %w", err)
 			}
@@ -174,7 +220,7 @@ func MigrateGenesisWithValidatorSet(defaultNodeHome string, encodingConfig apppa
 }
 
 // migrating validators follows logic from end_block per epoch recalculations https://github.com/confio/poe-contracts/blob/b7a8dbafd89cd70401dced518366f520b7089ff6/contracts/tgrade-valset/src/contract.rs#L709
-func MigrateValidatorState(clientCtx client.Context, appState map[string]json.RawMessage, genDoc *tmtypes.GenesisDoc, hfversion int32, renewvalidators map[string]bool) (map[string]json.RawMessage, *tmtypes.GenesisDoc, error) {
+func MigrateValidatorState(clientCtx client.Context, appState map[string]json.RawMessage, genDoc *tmtypes.GenesisDoc, hfversion int32, renewvalidators map[string]bool, renewoversightmembers map[string]bool) (map[string]json.RawMessage, *tmtypes.GenesisDoc, error) {
 	cdc := clientCtx.Codec
 
 	// Modify the chain_id
@@ -190,6 +236,7 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 	stakingContractAddress := ""
 	mixerContractAddress := ""
 	engagementContractAddress := ""
+	oversightContractAddress := ""
 	for _, c := range contracts.Contracts {
 		if c.ContractType == poetypes.PoEContractTypeValset {
 			valSet = c.GetAddress()
@@ -203,12 +250,16 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 		if c.ContractType == poetypes.PoEContractTypeEngagement {
 			engagementContractAddress = c.GetAddress()
 		}
+		if c.ContractType == poetypes.PoEContractTypeOversightCommunity {
+			oversightContractAddress = c.GetAddress()
+		}
 
 	}
 	fmt.Println("* valSet contract: ", valSet)
 	fmt.Println("* staking contract: ", stakingContractAddress)
 	fmt.Println("* mixer contract: ", mixerContractAddress)
 	fmt.Println("* engagement contract: ", engagementContractAddress)
+	fmt.Println("* oversight contract: ", oversightContractAddress)
 
 	var twasmGenesisState twasmtypes.GenesisState
 	cdc.MustUnmarshalJSON(appState[twasmtypes.ModuleName], &twasmGenesisState)
@@ -217,6 +268,8 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 	genesisValidators := make([]tmtypes.GenesisValidator, 0)
 	unstaked := sdk.NewInt(0)
 	stakeDenom := ""
+	oversightStakeRemoved := sdk.NewInt(0)
+	oversightDenom := ""
 
 	for wcindex, wcontract := range twasmGenesisState.Contracts {
 		if wcontract.ContractAddress == valSet {
@@ -475,6 +528,80 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 				}
 			}
 		}
+		if wcontract.ContractAddress == oversightContractAddress {
+			kvmodel := wcontract.GetKvModel()
+			pointsRemoved := int64(0)
+			pointsRemovedCount := 0
+			for modndx, mod := range kvmodel.Models {
+				key := mod.Key.String()
+				// trusted_circle
+				if key == "747275737465645F636972636C65" {
+					var config TrustedCircleConfig
+					err := json.Unmarshal(mod.Value, &config)
+					if err != nil {
+						return appState, genDoc, fmt.Errorf("oversight contract: cannot unmarshal config: %x: %s", mod.Value, err.Error())
+					}
+					oversightDenom = config.Denom
+				}
+				// members
+				if strings.HasPrefix(key, "00076D656D62657273") {
+					addr := hexToBech32(strings.TrimPrefix(key, "00076D656D62657273"))
+					// {"points":1,"start_height":null}
+					var points contract.TG4MemberResponse
+					err := json.Unmarshal(mod.Value, &points)
+					if err != nil {
+						return appState, genDoc, fmt.Errorf("oversight contract: cannot parse members value: %x", mod.Value)
+					}
+					if ok := renewoversightmembers[addr]; !ok {
+						kvmodel.Models[modndx].Value = []byte(`{"points":0,"start_height":null}`)
+						pointsRemovedCount += 1
+						if points.Points != nil {
+							pointsRemoved += int64(*points.Points)
+						}
+					}
+				}
+			}
+			newkvmodels := make([]cosmwasmtypes.Model, 0)
+			for _, mod := range kvmodel.Models {
+				key := mod.Key.String()
+				// escrows
+				if strings.HasPrefix(key, "0007657363726F7773") {
+					addr := hexToBech32(strings.TrimPrefix(key, "0007657363726F7773"))
+					if ok := renewoversightmembers[addr]; !ok {
+						// {"paid":"1000000","status":{"voting":{}}}
+						var escrow EscrowStatus
+						err := json.Unmarshal(mod.Value, &escrow)
+						if err != nil {
+							return appState, genDoc, fmt.Errorf("oversight contract: cannot parse escrow value: %x", mod.Value)
+						}
+						oversightStakeRemoved = oversightStakeRemoved.Add(escrow.Paid)
+						// we just remove the key-value pair
+					} else {
+						newkvmodels = append(newkvmodels, mod)
+					}
+				} else {
+					newkvmodels = append(newkvmodels, mod)
+				}
+			}
+			kvmodel.Models = newkvmodels
+
+			// update total
+			// "total"
+			for modndx, mod := range kvmodel.Models {
+				if mod.Key.String() == "746F74616C" {
+					value, err := strconv.ParseInt(string(mod.Value), 10, 64)
+					if err != nil {
+						return appState, genDoc, fmt.Errorf("oversight contract: cannot parse value: %s", string(mod.Value))
+					}
+					value = value - pointsRemoved
+					kvmodel.Models[modndx].Value = []byte(strconv.Itoa(int(value)))
+
+					fmt.Printf("* oversight points removed member counter: %d \n", pointsRemovedCount)
+					fmt.Printf("* oversight points removed: %d \n", pointsRemoved)
+					fmt.Printf("* remaining oversight points: %d \n", value)
+				}
+			}
+		}
 
 		twasmGenesisState.Contracts[wcindex] = wcontract
 	}
@@ -485,7 +612,13 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 	unstakedCoins := sdk.NewCoins(sdk.NewCoin(stakeDenom, unstaked))
 	fmt.Printf("* unstakedCoins: %s \n", unstakedCoins.String())
 	bankGenState := banktypes.GetGenesisStateFromAppState(cdc, appState)
+	fmt.Printf("* bank supply initial : %s \n", bankGenState.Supply.String())
 	bankGenState.Supply = bankGenState.Supply.Sub(unstakedCoins)
+
+	// burn oversight members escrow
+	oversightStakeBurned := sdk.NewCoins(sdk.NewCoin(oversightDenom, oversightStakeRemoved))
+	fmt.Printf("* oversightStakeBurned: %s \n", oversightStakeBurned.String())
+	bankGenState.Supply = bankGenState.Supply.Sub(oversightStakeBurned)
 
 	// see logic from TgradeHandler.handleDelegate - we need to subtract staker contract balance
 	for i, b := range bankGenState.Balances {
@@ -496,10 +629,16 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 			bankGenState.Balances[i].Coins = b.Coins.Sub(unstakedCoins)
 			fmt.Printf("* remaining staked coins: %s - %s \n", bankGenState.Balances[i].Coins.String(), stakingContractAddress)
 		}
+		if b.Address == oversightContractAddress {
+			if oversightStakeBurned.IsAnyGT(b.Coins) {
+				return appState, genDoc, fmt.Errorf("oversight escrow burnt coins greater than oversight balance: %s - %s", oversightStakeBurned.String(), b.Coins.String())
+			}
+			bankGenState.Balances[i].Coins = b.Coins.Sub(oversightStakeBurned)
+			fmt.Printf("* remaining oversight coins: %s - %s \n", bankGenState.Balances[i].Coins.String(), oversightContractAddress)
+		}
 	}
 
-	// TODO slash the liquid and vesting claims ?
-	// let (liquid_claims_slashed, vesting_claims_slashed) =
+	fmt.Printf("* bank supply final : %s \n", bankGenState.Supply.String())
 
 	// TODO oversight community - remove address or remove members
 	// TODO distribution fixes - engagement contract
