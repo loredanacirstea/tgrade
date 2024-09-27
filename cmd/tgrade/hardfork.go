@@ -183,6 +183,7 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 	poegenesis := poetypes.GetGenesisStateFromAppState(cdc, appState)
 
 	fmt.Println("* new ChainID:", genDoc.ChainID)
+	fmt.Println("* start block height:", genDoc.InitialHeight)
 
 	contracts := poegenesis.GetImportDump()
 	valSet := ""
