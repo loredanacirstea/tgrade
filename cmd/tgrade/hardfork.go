@@ -188,6 +188,8 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 	contracts := poegenesis.GetImportDump()
 	valSet := ""
 	stakingContractAddress := ""
+	mixerContractAddress := ""
+	engagementContractAddress := ""
 	for _, c := range contracts.Contracts {
 		if c.ContractType == poetypes.PoEContractTypeValset {
 			valSet = c.GetAddress()
@@ -195,7 +197,18 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 		if c.ContractType == poetypes.PoEContractTypeStaking {
 			stakingContractAddress = c.GetAddress()
 		}
+		if c.ContractType == poetypes.PoEContractTypeMixer {
+			mixerContractAddress = c.GetAddress()
+		}
+		if c.ContractType == poetypes.PoEContractTypeEngagement {
+			engagementContractAddress = c.GetAddress()
+		}
+
 	}
+	fmt.Println("* valSet contract: ", valSet)
+	fmt.Println("* staking contract: ", stakingContractAddress)
+	fmt.Println("* mixer contract: ", mixerContractAddress)
+	fmt.Println("* engagement contract: ", engagementContractAddress)
 
 	var twasmGenesisState twasmtypes.GenesisState
 	cdc.MustUnmarshalJSON(appState[twasmtypes.ModuleName], &twasmGenesisState)
@@ -206,9 +219,6 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 	stakeDenom := ""
 
 	for wcindex, wcontract := range twasmGenesisState.Contracts {
-		if wcontract.ContractInfo.Extension == nil {
-			continue
-		}
 		if wcontract.ContractAddress == valSet {
 			removedPow := uint64(0)
 			cmod := wcontract.GetCustomModel()
@@ -369,6 +379,103 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 			}
 		}
 
+		if wcontract.ContractAddress == mixerContractAddress {
+			kvmodel := wcontract.GetKvModel()
+			if kvmodel == nil {
+				return appState, genDoc, fmt.Errorf("mixer contract does not have kvmodel model")
+			}
+			pointsRemoved := int64(0)
+			pointsRemovedCount := 0
+			for modndx, mod := range kvmodel.Models {
+				// fmt.Println("---mod START--")
+				// fmt.Println("---mixer mod key--", mod.Key, " ", string(mod.Key.Bytes()))
+				// fmt.Println("---mixer mod value--", string(mod.Value), hex.EncodeToString(mod.Value))
+				key := mod.Key.String()
+				// members
+				if strings.HasPrefix(key, "00076D656D62657273") {
+					addr := hexToBech32(strings.TrimPrefix(key, "00076D656D62657273"))
+					// {"points":700,"start_height":null}
+					var points contract.TG4MemberResponse
+					err := json.Unmarshal(mod.Value, &points)
+					if err != nil {
+						return appState, genDoc, fmt.Errorf("mixer contract: cannot parse members value: %x", mod.Value)
+					}
+					if ok := renewvalidators[addr]; !ok {
+						kvmodel.Models[modndx].Value = []byte(`{"points":0,"start_height":null}`)
+						pointsRemovedCount += 1
+						if points.Points != nil {
+							pointsRemoved += int64(*points.Points)
+						}
+					}
+				}
+				// TODO members__points_tie_break ??
+			}
+			// update total
+			// "total"
+			for modndx, mod := range kvmodel.Models {
+				if mod.Key.String() == "746F74616C" {
+					value, err := strconv.ParseInt(string(mod.Value), 10, 64)
+					if err != nil {
+						return appState, genDoc, fmt.Errorf("mixer contract: cannot parse value: %s", string(mod.Value))
+					}
+					value = value - pointsRemoved
+					kvmodel.Models[modndx].Value = []byte(strconv.Itoa(int(value)))
+
+					fmt.Printf("* mixer points removed member counter: %d \n", pointsRemovedCount)
+					fmt.Printf("* mixer points removed: %d \n", pointsRemoved)
+					fmt.Printf("* remaining mixer points: %d \n", value)
+				}
+			}
+		}
+		if wcontract.ContractAddress == engagementContractAddress {
+			kvmodel := wcontract.GetKvModel()
+			pointsRemoved := int64(0)
+			pointsRemovedCount := 0
+			for modndx, mod := range kvmodel.Models {
+				// fmt.Println("---mod START--")
+				// fmt.Println("---mixer mod key--", mod.Key, " ", string(mod.Key.Bytes()))
+				// fmt.Println("---mixer mod value--", string(mod.Value), hex.EncodeToString(mod.Value))
+				key := mod.Key.String()
+				// members
+				if strings.HasPrefix(key, "00076D656D62657273") {
+					addr := hexToBech32(strings.TrimPrefix(key, "00076D656D62657273"))
+					// {"points":700,"start_height":null}
+					var points contract.TG4MemberResponse
+					err := json.Unmarshal(mod.Value, &points)
+					if err != nil {
+						return appState, genDoc, fmt.Errorf("engagement contract: cannot parse members value: %x", mod.Value)
+					}
+					if ok := renewvalidators[addr]; !ok {
+						kvmodel.Models[modndx].Value = []byte(`{"points":0,"start_height":null}`)
+						pointsRemovedCount += 1
+						if points.Points != nil {
+							pointsRemoved += int64(*points.Points)
+						}
+					}
+				}
+				// TODO members__points ?
+				// TODO members__changelog ?
+				// TODO withdraw_adjustment ?
+				// TODO members__points_tie_break ??
+			}
+			// update total
+			// "total"
+			for modndx, mod := range kvmodel.Models {
+				if mod.Key.String() == "746F74616C" {
+					value, err := strconv.ParseInt(string(mod.Value), 10, 64)
+					if err != nil {
+						return appState, genDoc, fmt.Errorf("engagement contract: cannot parse value: %s", string(mod.Value))
+					}
+					value = value - pointsRemoved
+					kvmodel.Models[modndx].Value = []byte(strconv.Itoa(int(value)))
+
+					fmt.Printf("* engagement points removed member counter: %d \n", pointsRemovedCount)
+					fmt.Printf("* engagement points removed: %d \n", pointsRemoved)
+					fmt.Printf("* remaining engagement points: %d \n", value)
+				}
+			}
+		}
+
 		twasmGenesisState.Contracts[wcindex] = wcontract
 	}
 
@@ -394,8 +501,8 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 	// TODO slash the liquid and vesting claims ?
 	// let (liquid_claims_slashed, vesting_claims_slashed) =
 
-	// TODO distribution fixes
-	// TODO remove engagement from eliminated validators - poe MIXER points
+	// TODO oversight community - remove address or remove members
+	// TODO distribution fixes - engagement contract
 	// TODO vesting accounts?
 	// Update membership messages
 	// MemberChangedHookMsg
