@@ -333,7 +333,7 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 				if ok := renewvalidators[op.Operator]; !ok {
 					initMsg.Operators[i].ActiveValidator = false
 					initMsg.Operators[i].JailedUntil = &JailingPeriod{
-						Start: strconv.Itoa(int(time.Now().Unix() * 1000000)),
+						Start: strconv.Itoa(int(genDoc.GenesisTime.Unix() * 1000000)),
 						End:   JailingEnd{Forever: struct{}{}},
 					}
 				}
