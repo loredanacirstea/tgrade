@@ -31,6 +31,10 @@ import (
 	twasmtypes "github.com/confio/tgrade/x/twasm/types"
 )
 
+var (
+	genesisTimeFlag = "genesis-time"
+)
+
 type DistributionContract struct {
 	Address string `json:"contract"`
 	// Ratio of total reward tokens for an epoch to be sent to that contract for further distribution.
@@ -180,6 +184,8 @@ func MigrateGenesisWithValidatorSet(defaultNodeHome string, encodingConfig apppa
 				os.Exit(1)
 			}
 
+			genesisTime, _ := cmd.Flags().GetString(genesisTimeFlag) //nolint:errcheck
+
 			appState, genDoc, err := genutiltypes.GenesisStateFromGenFile(genesisFile)
 			if err != nil {
 				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
@@ -194,7 +200,7 @@ func MigrateGenesisWithValidatorSet(defaultNodeHome string, encodingConfig apppa
 				oversightMap[item] = true
 			}
 
-			appState, genDoc, err = MigrateValidatorState(clientCtx, appState, genDoc, int32(hfindex), validatorMap, oversightMap)
+			appState, genDoc, err = MigrateValidatorState(clientCtx, appState, genDoc, int32(hfindex), genesisTime, validatorMap, oversightMap)
 			if err != nil {
 				return fmt.Errorf("migration failed: %w", err)
 			}
@@ -214,22 +220,36 @@ func MigrateGenesisWithValidatorSet(defaultNodeHome string, encodingConfig apppa
 	cmd.Flags().String(flagVestingAmt, "", "amount of coins for vesting accounts")
 	cmd.Flags().Int64(flagVestingStart, 0, "schedule start time (unix epoch) for vesting accounts")
 	cmd.Flags().Int64(flagVestingEnd, 0, "schedule end time (unix epoch) for vesting accounts")
+	cmd.Flags().String(genesisTimeFlag, "", "migrate with a specific genesis time")
 	flags.AddQueryFlagsToCmd(cmd)
 
 	return cmd
 }
 
 // migrating validators follows logic from end_block per epoch recalculations https://github.com/confio/poe-contracts/blob/b7a8dbafd89cd70401dced518366f520b7089ff6/contracts/tgrade-valset/src/contract.rs#L709
-func MigrateValidatorState(clientCtx client.Context, appState map[string]json.RawMessage, genDoc *tmtypes.GenesisDoc, hfversion int32, renewvalidators map[string]bool, renewoversightmembers map[string]bool) (map[string]json.RawMessage, *tmtypes.GenesisDoc, error) {
+func MigrateValidatorState(clientCtx client.Context, appState map[string]json.RawMessage, genDoc *tmtypes.GenesisDoc, hfversion int32, genesisTime string, renewvalidators map[string]bool, renewoversightmembers map[string]bool) (map[string]json.RawMessage, *tmtypes.GenesisDoc, error) {
 	cdc := clientCtx.Codec
 
 	// Modify the chain_id
 	genDoc.ChainID = fmt.Sprintf("tgrade-mainnet-%d", hfversion)
-
-	poegenesis := poetypes.GetGenesisStateFromAppState(cdc, appState)
-
+	gentime, _ := genDoc.GenesisTime.MarshalJSON()
 	fmt.Println("* new ChainID:", genDoc.ChainID)
 	fmt.Println("* start block height:", genDoc.InitialHeight)
+
+	if genesisTime == "" {
+		fmt.Println("* genesis_time:", string(gentime))
+	} else {
+		var newgenTime time.Time
+		err := json.Unmarshal([]byte(genesisTime), &newgenTime)
+		if err != nil {
+			return appState, genDoc, fmt.Errorf("invalid genesis time: %s", genesisTime)
+		}
+		genDoc.GenesisTime = newgenTime
+		gentime, _ := genDoc.GenesisTime.MarshalJSON()
+		fmt.Println("* genesis_time:", string(gentime))
+	}
+
+	poegenesis := poetypes.GetGenesisStateFromAppState(cdc, appState)
 
 	contracts := poegenesis.GetImportDump()
 	valSet := ""
@@ -331,7 +351,9 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 				}
 			}
 			initMsg.Validators = newValidators
+			valbz, _ := json.Marshal(newValidators)
 			fmt.Printf("final validators: %d \n", len(initMsg.Validators))
+			fmt.Printf("final validators: %s \n", string(valbz))
 
 			initMsgBz, err := json.Marshal(&initMsg)
 			if err != nil {
