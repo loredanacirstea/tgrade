@@ -150,6 +150,13 @@ type EscrowStatus struct {
 	Status struct{} `json:"status"`
 }
 
+type TG4MemberResponse struct {
+	// Points nil means not a member, 0 means member with no voting power... this can be a very important distinction
+	Points *int `json:"points"`
+	// Optional field indicating the start height the member gained membership
+	StartHeight uint64 `json:"start_height"`
+}
+
 // MigrateGenesisWithValidatorSet returns cobra Command.
 func MigrateGenesisWithValidatorSet(defaultNodeHome string, encodingConfig appparams.EncodingConfig) *cobra.Command {
 	cmd := &cobra.Command{
@@ -290,6 +297,7 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 	stakeDenom := ""
 	oversightStakeRemoved := sdk.NewInt(0)
 	oversightDenom := ""
+	emptyPoints := 0
 
 	for wcindex, wcontract := range twasmGenesisState.Contracts {
 		if wcontract.ContractAddress == valSet {
@@ -401,17 +409,22 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 				if strings.HasPrefix(key, "00076D656D62657273") {
 					addr := hexToBech32(strings.TrimPrefix(key, "00076D656D62657273"))
 					// {"points":700,"start_height":null}
-					var points contract.TG4MemberResponse
+					var points TG4MemberResponse
 					err := json.Unmarshal(mod.Value, &points)
 					if err != nil {
 						return appState, genDoc, fmt.Errorf("staking contract: cannot parse members value: %x", mod.Value)
 					}
 					if ok := renewvalidators[addr]; !ok {
-						kvmodel.Models[modndx].Value = []byte(`{"points":0,"start_height":null}`)
 						unstakedCount += 1
 						if points.Points != nil {
 							unstakedPoints += int64(*points.Points)
 						}
+						points.Points = &emptyPoints
+						pointsbz, err := json.Marshal(&points)
+						if err != nil {
+							return appState, genDoc, fmt.Errorf("staking contract: cannot parse members value: %x", mod.Value)
+						}
+						kvmodel.Models[modndx].Value = pointsbz
 					}
 				}
 				// vesting_stake
@@ -470,17 +483,22 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 				if strings.HasPrefix(key, "00076D656D62657273") {
 					addr := hexToBech32(strings.TrimPrefix(key, "00076D656D62657273"))
 					// {"points":700,"start_height":null}
-					var points contract.TG4MemberResponse
+					var points TG4MemberResponse
 					err := json.Unmarshal(mod.Value, &points)
 					if err != nil {
 						return appState, genDoc, fmt.Errorf("mixer contract: cannot parse members value: %x", mod.Value)
 					}
 					if ok := renewvalidators[addr]; !ok {
-						kvmodel.Models[modndx].Value = []byte(`{"points":0,"start_height":null}`)
 						pointsRemovedCount += 1
 						if points.Points != nil {
 							pointsRemoved += int64(*points.Points)
 						}
+						points.Points = &emptyPoints
+						pointsbz, err := json.Marshal(&points)
+						if err != nil {
+							return appState, genDoc, fmt.Errorf("mixer contract: cannot parse members value: %x", mod.Value)
+						}
+						kvmodel.Models[modndx].Value = pointsbz
 					}
 				}
 				// TODO members__points_tie_break ??
@@ -515,17 +533,22 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 				if strings.HasPrefix(key, "00076D656D62657273") {
 					addr := hexToBech32(strings.TrimPrefix(key, "00076D656D62657273"))
 					// {"points":700,"start_height":null}
-					var points contract.TG4MemberResponse
+					var points TG4MemberResponse
 					err := json.Unmarshal(mod.Value, &points)
 					if err != nil {
 						return appState, genDoc, fmt.Errorf("engagement contract: cannot parse members value: %x", mod.Value)
 					}
 					if ok := renewvalidators[addr]; !ok {
-						kvmodel.Models[modndx].Value = []byte(`{"points":0,"start_height":null}`)
 						pointsRemovedCount += 1
 						if points.Points != nil {
 							pointsRemoved += int64(*points.Points)
 						}
+						points.Points = &emptyPoints
+						pointsbz, err := json.Marshal(&points)
+						if err != nil {
+							return appState, genDoc, fmt.Errorf("engagement contract: cannot parse members value: %x", mod.Value)
+						}
+						kvmodel.Models[modndx].Value = pointsbz
 					}
 				}
 				// members__points
@@ -577,17 +600,22 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 				if strings.HasPrefix(key, "00076D656D62657273") {
 					addr := hexToBech32(strings.TrimPrefix(key, "00076D656D62657273"))
 					// {"points":1,"start_height":null}
-					var points contract.TG4MemberResponse
+					var points TG4MemberResponse
 					err := json.Unmarshal(mod.Value, &points)
 					if err != nil {
 						return appState, genDoc, fmt.Errorf("oversight contract: cannot parse members value: %x", mod.Value)
 					}
 					if ok := renewoversightmembers[addr]; !ok {
-						kvmodel.Models[modndx].Value = []byte(`{"points":0,"start_height":null}`)
 						pointsRemovedCount += 1
 						if points.Points != nil {
 							pointsRemoved += int64(*points.Points)
 						}
+						points.Points = &emptyPoints
+						pointsbz, err := json.Marshal(&points)
+						if err != nil {
+							return appState, genDoc, fmt.Errorf("oversight contract: cannot parse members value: %x", mod.Value)
+						}
+						kvmodel.Models[modndx].Value = pointsbz
 					}
 				}
 				// members__points
