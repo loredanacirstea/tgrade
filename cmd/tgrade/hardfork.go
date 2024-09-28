@@ -246,8 +246,8 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 	if genesisTime == "" {
 		fmt.Println("* genesis_time:", string(gentime))
 	} else {
-		var newgenTime time.Time
-		err := json.Unmarshal([]byte(genesisTime), &newgenTime)
+		layout := time.RFC3339
+		newgenTime, err := time.Parse(layout, genesisTime)
 		if err != nil {
 			return appState, genDoc, fmt.Errorf("invalid genesis time: %s", genesisTime)
 		}
@@ -360,7 +360,8 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 			}
 			initMsg.Validators = newValidators
 			valbz, _ := json.Marshal(newValidators)
-			fmt.Printf("final validators: %d \n", len(initMsg.Validators))
+			fmt.Printf("final validators: %d \n", len(renewvalidators))
+			fmt.Printf("final active validators: %d \n", len(initMsg.Validators))
 			fmt.Printf("final validators: %s \n", string(valbz))
 
 			initMsgBz, err := json.Marshal(&initMsg)
