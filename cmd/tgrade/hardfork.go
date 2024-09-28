@@ -32,7 +32,8 @@ import (
 )
 
 var (
-	genesisTimeFlag = "genesis-time"
+	genesisTimeFlag      = "genesis-time"
+	genesisTimeResetFlag = "genesis-time-reset"
 )
 
 type DistributionContract struct {
@@ -191,7 +192,8 @@ func MigrateGenesisWithValidatorSet(defaultNodeHome string, encodingConfig apppa
 				os.Exit(1)
 			}
 
-			genesisTime, _ := cmd.Flags().GetString(genesisTimeFlag) //nolint:errcheck
+			genesisTime, _ := cmd.Flags().GetString(genesisTimeFlag)         //nolint:errcheck
+			genesisTimeReset, _ := cmd.Flags().GetBool(genesisTimeResetFlag) //nolint:errcheck
 
 			appState, genDoc, err := genutiltypes.GenesisStateFromGenFile(genesisFile)
 			if err != nil {
@@ -207,9 +209,22 @@ func MigrateGenesisWithValidatorSet(defaultNodeHome string, encodingConfig apppa
 				oversightMap[item] = true
 			}
 
-			appState, genDoc, err = MigrateValidatorState(clientCtx, appState, genDoc, int32(hfindex), genesisTime, validatorMap, oversightMap)
-			if err != nil {
-				return fmt.Errorf("migration failed: %w", err)
+			if genesisTimeReset {
+				fmt.Println("* only genesis timestamp is being migrated ")
+				if genesisTime == "" {
+					return fmt.Errorf("no genesis-time provided")
+				}
+				layout := time.RFC3339
+				newgenTime, err := time.Parse(layout, genesisTime)
+				if err != nil {
+					return fmt.Errorf("invalid genesis time: %s", genesisTime)
+				}
+				genDoc.GenesisTime = newgenTime
+			} else {
+				appState, genDoc, err = MigrateValidatorState(clientCtx, appState, genDoc, int32(hfindex), genesisTime, validatorMap, oversightMap)
+				if err != nil {
+					return fmt.Errorf("migration failed: %w", err)
+				}
 			}
 
 			appStateJSON, err := json.Marshal(appState)
@@ -228,6 +243,8 @@ func MigrateGenesisWithValidatorSet(defaultNodeHome string, encodingConfig apppa
 	cmd.Flags().Int64(flagVestingStart, 0, "schedule start time (unix epoch) for vesting accounts")
 	cmd.Flags().Int64(flagVestingEnd, 0, "schedule end time (unix epoch) for vesting accounts")
 	cmd.Flags().String(genesisTimeFlag, "", "migrate with a specific genesis time")
+	cmd.Flags().Bool(genesisTimeResetFlag, false, "just change genesis timestamp")
+
 	flags.AddQueryFlagsToCmd(cmd)
 
 	return cmd
