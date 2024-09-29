@@ -492,6 +492,7 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 			}
 			pointsRemoved := int64(0)
 			pointsRemovedCount := 0
+			membersCount := 0
 			for modndx, mod := range kvmodel.Models {
 				// fmt.Println("---mod START--")
 				// fmt.Println("---mixer mod key--", mod.Key, " ", string(mod.Key.Bytes()))
@@ -506,7 +507,10 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 					if err != nil {
 						return appState, genDoc, fmt.Errorf("mixer contract: cannot parse members value: %x", mod.Value)
 					}
-					if ok := renewvalidators[addr]; !ok {
+					membersCount += 1
+					_, ok := renewvalidators[addr]
+					_, ok2 := renewoversightmembers[addr]
+					if !ok && !ok2 {
 						pointsRemovedCount += 1
 						if points.Points != nil {
 							pointsRemoved += int64(*points.Points)
@@ -532,6 +536,7 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 					value = value - pointsRemoved
 					kvmodel.Models[modndx].Value = []byte(strconv.Itoa(int(value)))
 
+					fmt.Printf("* mixer points initial members count: %d \n", membersCount)
 					fmt.Printf("* mixer points removed member counter: %d \n", pointsRemovedCount)
 					fmt.Printf("* mixer points removed: %d \n", pointsRemoved)
 					fmt.Printf("* remaining mixer points: %d \n", value)
@@ -542,6 +547,9 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 			kvmodel := wcontract.GetKvModel()
 			pointsRemoved := int64(0)
 			pointsRemovedCount := 0
+			membersCount := 0
+			memberPointsCount := 0
+			memberPointsRemovedCount := 0
 			for modndx, mod := range kvmodel.Models {
 				// fmt.Println("---mod START--")
 				// fmt.Println("---mixer mod key--", mod.Key, " ", string(mod.Key.Bytes()))
@@ -551,12 +559,15 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 				if strings.HasPrefix(key, "00076D656D62657273") {
 					addr := hexToBech32(strings.TrimPrefix(key, "00076D656D62657273"))
 					// {"points":700,"start_height":null}
+					membersCount += 1
 					var points TG4MemberResponse
 					err := json.Unmarshal(mod.Value, &points)
 					if err != nil {
 						return appState, genDoc, fmt.Errorf("engagement contract: cannot parse members value: %x", mod.Value)
 					}
-					if ok := renewvalidators[addr]; !ok {
+					_, ok := renewvalidators[addr]
+					_, ok2 := renewoversightmembers[addr]
+					if !ok && !ok2 {
 						pointsRemovedCount += 1
 						if points.Points != nil {
 							pointsRemoved += int64(*points.Points)
@@ -574,8 +585,12 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 				// e.g. 000F6D656D626572735F5F706F696E747300080000000000000001746772616465313871326C65323533666C3664396A6A75713071703777393570667177666B7339616379637332
 				if strings.HasPrefix(key, "000F6D656D626572735F5F706F696E7473") {
 					addr := hexToBech32(key[54:])
-					if ok := renewoversightmembers[addr]; !ok {
+					memberPointsCount += 1
+					_, ok := renewvalidators[addr]
+					_, ok2 := renewoversightmembers[addr]
+					if !ok && !ok2 {
 						kvmodel.Models[modndx].Value = []byte(`0`)
+						memberPointsRemovedCount += 1
 					}
 				}
 				// TODO members__changelog ?
@@ -593,9 +608,13 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 					value = value - pointsRemoved
 					kvmodel.Models[modndx].Value = []byte(strconv.Itoa(int(value)))
 
+					fmt.Printf("* engagement points initial members count: %d \n", membersCount)
 					fmt.Printf("* engagement points removed member counter: %d \n", pointsRemovedCount)
 					fmt.Printf("* engagement points removed: %d \n", pointsRemoved)
 					fmt.Printf("* remaining engagement points: %d \n", value)
+
+					fmt.Printf("* engagement member points initial count: %d \n", memberPointsCount)
+					fmt.Printf("* engagement member points removed count: %d \n", memberPointsRemovedCount)
 				}
 			}
 		}
@@ -603,6 +622,8 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 			kvmodel := wcontract.GetKvModel()
 			pointsRemoved := int64(0)
 			pointsRemovedCount := 0
+			membersCount := 0
+			escrowCount := 0
 			for modndx, mod := range kvmodel.Models {
 				key := mod.Key.String()
 				// trusted_circle
@@ -623,7 +644,10 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 					if err != nil {
 						return appState, genDoc, fmt.Errorf("oversight contract: cannot parse members value: %x", mod.Value)
 					}
-					if ok := renewoversightmembers[addr]; !ok {
+					membersCount += 1
+					_, ok := renewvalidators[addr]
+					_, ok2 := renewoversightmembers[addr]
+					if !ok && !ok2 {
 						pointsRemovedCount += 1
 						if points.Points != nil {
 							pointsRemoved += int64(*points.Points)
@@ -641,7 +665,9 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 				// e.g. 000F6D656D626572735F5F706F696E747300080000000000000001746772616465313871326C65323533666C3664396A6A75713071703777393570667177666B7339616379637332
 				if strings.HasPrefix(key, "000F6D656D626572735F5F706F696E7473") {
 					addr := hexToBech32(key[54:])
-					if ok := renewoversightmembers[addr]; !ok {
+					_, ok := renewvalidators[addr]
+					_, ok2 := renewoversightmembers[addr]
+					if !ok && !ok2 {
 						kvmodel.Models[modndx].Value = []byte(`0`)
 					}
 				}
@@ -652,7 +678,10 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 				// escrows
 				if strings.HasPrefix(key, "0007657363726F7773") {
 					addr := hexToBech32(strings.TrimPrefix(key, "0007657363726F7773"))
-					if ok := renewoversightmembers[addr]; !ok {
+					escrowCount += 1
+					_, ok := renewvalidators[addr]
+					_, ok2 := renewoversightmembers[addr]
+					if !ok && !ok2 {
 						// {"paid":"1000000","status":{"voting":{}}}
 						var escrow EscrowStatus
 						err := json.Unmarshal(mod.Value, &escrow)
@@ -681,13 +710,14 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 					value = value - pointsRemoved
 					kvmodel.Models[modndx].Value = []byte(strconv.Itoa(int(value)))
 
+					fmt.Printf("* oversight points initial members count: %d \n", membersCount)
+					fmt.Printf("* oversight points initial escrow members count: %d \n", escrowCount)
 					fmt.Printf("* oversight points removed member counter: %d \n", pointsRemovedCount)
 					fmt.Printf("* oversight points removed: %d \n", pointsRemoved)
 					fmt.Printf("* remaining oversight points: %d \n", value)
 				}
 			}
 		}
-
 		twasmGenesisState.Contracts[wcindex] = wcontract
 	}
 
