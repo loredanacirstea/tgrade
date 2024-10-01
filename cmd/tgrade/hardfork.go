@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -397,7 +398,6 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 			unstakedPoints := int64(0)
 			unstakedCount := 0
 			for modndx, mod := range kvmodel.Models {
-				// fmt.Println("---mod START--")
 				// fmt.Println("---staking mod key--", mod.Key, " ", string(mod.Key.Bytes()))
 				// fmt.Println("---staking mod value--", string(mod.Value), hex.EncodeToString(mod.Value))
 				key := mod.Key.String()
@@ -494,9 +494,6 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 			pointsRemovedCount := 0
 			membersCount := 0
 			for modndx, mod := range kvmodel.Models {
-				// fmt.Println("---mod START--")
-				// fmt.Println("---mixer mod key--", mod.Key, " ", string(mod.Key.Bytes()))
-				// fmt.Println("---mixer mod value--", string(mod.Value), hex.EncodeToString(mod.Value))
 				key := mod.Key.String()
 				// members
 				if strings.HasPrefix(key, "00076D656D62657273") {
@@ -523,8 +520,29 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 						kvmodel.Models[modndx].Value = pointsbz
 					}
 				}
-				// TODO members__points_tie_break ??
+
+				// members__points_tie_break
+				if strings.HasPrefix(key, "00196D656D626572735F5F706F696E74735F7469655F627265616B") {
+					// 27 bytes namespace + 0008 + 8 bytes points + 0008 + 8 bytes -start_height + addr
+					// 00196D656D626572735F5F706F696E74735F7469655F627265616B000800000000000A06E20008800000000000000074677261646531776C6167756378647876736D766A363333303836347838713376787A34783032643073736A6C
+					// value is 45, the addr length
+					addr := hexToBech32(key[94:])
+					_, ok := renewvalidators[addr]
+					_, ok2 := renewoversightmembers[addr]
+					if !ok && !ok2 {
+						key, _ := hex.DecodeString(key[0:58] + "00000000000000000008" + key[78:94] + key[94:])
+						kvmodel.Models[modndx].Key = key
+					}
+				}
+				// TODO add changelog ?
+				// members__changelog-
 			}
+
+			// sort by keys after we have modified the member indexes
+			sort.Slice(kvmodel.Models, func(i, j int) bool {
+				return bytes.Compare(kvmodel.Models[i].Key, kvmodel.Models[j].Key) < 0
+			})
+
 			// update total
 			// "total"
 			for modndx, mod := range kvmodel.Models {
@@ -551,9 +569,6 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 			memberPointsCount := 0
 			memberPointsRemovedCount := 0
 			for modndx, mod := range kvmodel.Models {
-				// fmt.Println("---mod START--")
-				// fmt.Println("---mixer mod key--", mod.Key, " ", string(mod.Key.Bytes()))
-				// fmt.Println("---mixer mod value--", string(mod.Value), hex.EncodeToString(mod.Value))
 				key := mod.Key.String()
 				// members
 				if strings.HasPrefix(key, "00076D656D62657273") {
@@ -581,22 +596,29 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 					}
 				}
 				// members__points
-				// 54 bytes + address
-				// e.g. 000F6D656D626572735F5F706F696E747300080000000000000001746772616465313871326C65323533666C3664396A6A75713071703777393570667177666B7339616379637332
+				// 17 bytes namespace + 2 bytes length + 8 bytes points + 45 bytes addr
+				// e.g. 000F6D656D626572735F5F706F696E7473 0008 00000000000002A9 74677261646531746B677677756E73376C37766B7063307071326E6E6A6B6B647A3530397677727A6638367377
+				// value is 45 (addr length in bytes)
 				if strings.HasPrefix(key, "000F6D656D626572735F5F706F696E7473") {
 					addr := hexToBech32(key[54:])
 					memberPointsCount += 1
 					_, ok := renewvalidators[addr]
 					_, ok2 := renewoversightmembers[addr]
 					if !ok && !ok2 {
-						kvmodel.Models[modndx].Value = []byte(`0`)
+						key, _ := hex.DecodeString(key[0:38] + "0000000000000000" + key[54:])
+						kvmodel.Models[modndx].Key = key
 						memberPointsRemovedCount += 1
 					}
 				}
 				// TODO members__changelog ?
 				// TODO withdraw_adjustment ?
-				// TODO members__points_tie_break ??
 			}
+
+			// sort by keys after we have modified the member indexes
+			sort.Slice(kvmodel.Models, func(i, j int) bool {
+				return bytes.Compare(kvmodel.Models[i].Key, kvmodel.Models[j].Key) < 0
+			})
+
 			// update total
 			// "total"
 			for modndx, mod := range kvmodel.Models {
@@ -661,14 +683,16 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 					}
 				}
 				// members__points
-				// 54 bytes + address
-				// e.g. 000F6D656D626572735F5F706F696E747300080000000000000001746772616465313871326C65323533666C3664396A6A75713071703777393570667177666B7339616379637332
+				// 17 bytes namespace + 2 bytes length + 8 bytes points + 45 bytes addr
+				// e.g. 000F6D656D626572735F5F706F696E7473 0008 0000000000000001 746772616465313871326C65323533666C3664396A6A75713071703777393570667177666B7339616379637332
+				// value is 45 (addr length in bytes)
 				if strings.HasPrefix(key, "000F6D656D626572735F5F706F696E7473") {
 					addr := hexToBech32(key[54:])
 					_, ok := renewvalidators[addr]
 					_, ok2 := renewoversightmembers[addr]
 					if !ok && !ok2 {
-						kvmodel.Models[modndx].Value = []byte(`0`)
+						key, _ := hex.DecodeString(key[0:38] + "0000000000000000" + key[54:])
+						kvmodel.Models[modndx].Key = key
 					}
 				}
 			}
@@ -698,6 +722,11 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 				}
 			}
 			kvmodel.Models = newkvmodels
+
+			// sort by keys after we have modified the member indexes
+			sort.Slice(kvmodel.Models, func(i, j int) bool {
+				return bytes.Compare(kvmodel.Models[i].Key, kvmodel.Models[j].Key) < 0
+			})
 
 			// update total
 			// "total"
@@ -755,7 +784,6 @@ func MigrateValidatorState(clientCtx client.Context, appState map[string]json.Ra
 
 	fmt.Printf("* bank supply final : %s \n", bankGenState.Supply.String())
 
-	// TODO oversight community - remove address or remove members
 	// TODO distribution fixes - engagement contract
 	// TODO vesting accounts?
 	// Update membership messages
