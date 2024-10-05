@@ -117,6 +117,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig appparams.EncodingConfig
 		debug.Cmd(),
 		config.Cmd(),
 		MigrateGenesisWithValidatorSet(app.DefaultNodeHome, encodingConfig),
+		AnalyzeGenesisBalances(app.DefaultNodeHome, encodingConfig),
 	)
 
 	ac := appCreator{
